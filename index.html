@@ -1067,7 +1067,7 @@ const S={negocios:[],actividades:[],tareas:[],piezas:[],eventos:[],web_semanas:[
 const ready={negocios:false,actividades:false,tareas:false,piezas:false,eventos:false,web_semanas:false,ciclos:false,formularios:false,sync:false,salud:false,incidencias:false}
 /* Web del CRM sobre Supabase (crm.veoup.es): la lectura de Drive la hacen triggers en la base de datos */
 const SUPA=!!window.VEOUP_SUPA;
-if(SUPA){S.pagos=[];S.reservas=[];ready.pagos=false;ready.reservas=false;ready.correos=false};
+if(SUPA){S.pagos=[];S.reservas=[];S.stripe_suscripciones=[];S.stripe_cobros=[];ready.pagos=false;ready.reservas=false;ready.correos=false;ready.stripe_suscripciones=false;ready.stripe_cobros=false};
 let statusMsg="Cargando datos…",abierto=null;
 const F={q:"",resp:lsGet("resp",""),origen:lsGet("origen",""),tipo:lsGet("tipo",""),desc:false};
 const allReady=()=>Object.values(ready).every(Boolean);
@@ -1478,6 +1478,8 @@ function contadoresNav(){
 function alertas(){
   const hoy=hoyISO();const N=S.negocios.filter(n=>n.etapa!==DESCARTADO);const al=[];
   const ir=(i)=>()=>{location.hash="flujo";setTimeout(()=>irAColumna(i),60)};
+  const impS=(S.stripe_suscripciones||[]).filter(s=>s.estado==="past_due"||s.estado==="unpaid");
+  if(impS.length)al.push({n:impS.length,t:"cobro"+(impS.length>1?"s":"")+" de suscripción fallido"+(impS.length>1?"s":""),cta:"Ver Finanzas",go:()=>{location.hash="finanzas"},crit:true});
   const sinContestar=sinContestar24h();
   if(sinContestar.length)al.push({n:sinContestar.length,t:"lead"+(sinContestar.length>1?"s":"")+" sin contestar más de 24 h",cta:"Responder con /brief",go:ir(0),crit:true});
   const form=N.filter(n=>n.etapa==="Nuevo lead"&&n.tallyId);
@@ -3472,7 +3474,7 @@ function vistaClientes(m){
   const cuota=n=>n.prueba?0:(PLANES[n.plan]||0)+(n.plan==="Scale"&&n.googleAds?GOOGLE_ADS_EUR:0);
   const COLS=[
     ["nombre","Negocio",n=>n.nombre||""],["etapa","Etapa",n=>idxEtapa(n.etapa)],["plan","Plan",n=>n.plan||""],["cuota","Cuota/mes",cuota,"r"],
-    ["alta","Alta",n=>n.fechaAlta||n.pagadoEl||""],["cd","Content Day",n=>n.contentDay||""],["resp","Lo lleva",n=>n.responsable||""],["origen","Origen",n=>n.origen||""]];
+    ["alta","Alta",n=>n.fechaAlta||n.pagadoEl||""],["sus","Suscripción",n=>{const z=subDe(n);return z?z.estado:""}],["cd","Content Day",n=>n.contentDay||""],["resp","Lo lleva",n=>n.responsable||""],["origen","Origen",n=>n.origen||""]];
   if(CL.ord){const c=COLS.find(x=>x[0]===CL.ord);if(c)filas.sort((a,b)=>{const x=c[2](a),y=c[2](b);return(x<y?-1:x>y?1:0)*CL.dir})}
   else filas.sort((a,b)=>(a.nombre||"").localeCompare(b.nombre||""));
   const total=filas.reduce((s,n)=>s+cuota(n),0);
@@ -3493,15 +3495,35 @@ function vistaClientes(m){
       h("td",{"data-l":"Plan"},n.plan?n.plan+(n.plan==="Scale"&&n.googleAds?" + Ads":""):h("span",{class:"muted",text:"—"}),n.prueba?h("span",{class:"pill info",style:"margin-left:6px",text:"Gratis"}):null),
       h("td",{class:"r","data-l":"Cuota/mes"},cuota(n)?eur0(cuota(n)):h("span",{class:"muted",text:"—"})),
       h("td",{"data-l":"Alta"},n.fechaAlta||n.pagadoEl?fechaCorta(n.fechaAlta||n.pagadoEl):h("span",{class:"muted",text:"—"})),
+      (()=>{const z=subDe(n);if(!z)return h("td",{"data-l":"Suscripción"},h("span",{class:"muted",text:n.prueba?"Gratis":"—"}));const[et,ec]=estadoSub(z);return h("td",{"data-l":"Suscripción"},h("span",{class:"pill "+ec,text:et}),z.proximoCobro&&subViva(z)?h("span",{class:"muted",style:"margin-left:8px;font-size:12px",text:"cobra "+fechaD(z.proximoCobro)}):null)})(),
       h("td",{"data-l":"Content Day"},n.contentDay?fechaCorta(n.contentDay)+(n.contentDayHora?" · "+n.contentDayHora:""):h("span",{class:"muted",text:"—"})),
       h("td",{"data-l":"Lo lleva"},n.responsable||h("span",{class:"muted",text:"Sin asignar"})),
       h("td",{"data-l":"Origen"},n.origen||"—")))),
-    seg[0]==="clientes"&&filas.length>1?h("tfoot",null,h("tr",null,h("td",{text:"Total"}),h("td"),h("td"),h("td",{class:"r",text:eur0(total)}),h("td",{colspan:"4"}))):null))));
+    seg[0]==="clientes"&&filas.length>1?h("tfoot",null,h("tr",null,h("td",{text:"Total"}),h("td"),h("td"),h("td",{class:"r",text:eur0(total)}),h("td",{colspan:"5"}))):null))));
 }
+
+/* ---------- Stripe: suscripciones y cobros (tablas stripe_*; las rellena el script de pagos cada 15 min) ---------- */
+const SUBS=()=>S.stripe_suscripciones||[],COBROS=()=>S.stripe_cobros||[];
+const SUB_ESTADO={active:["Activa","ok"],trialing:["En prueba","info"],past_due:["Pago fallido","bad"],unpaid:["Impagada","bad"],canceled:["Cancelada","x"],incomplete:["Incompleta","warn"],incomplete_expired:["Caducada","x"],paused:["Pausada","warn"]};
+const subViva=s=>["active","trialing","past_due","unpaid"].includes(s.estado);
+const siV=v=>v===true||v==="true";
+function estadoSub(s){if(s.estado==="active"&&siV(s.cancelaAlFinal))return["Baja el "+fechaCorta(String(s.proximoCobro||"").slice(0,10)),"warn"];return SUB_ESTADO[s.estado]||[s.estado||"—","x"]}
+function negocioStripe(cli,email){
+  const p=(S.pagos||[]).find(x=>cli&&x.clienteStripe===cli&&x.negocioId);if(p){const n=S.negocios.find(n=>n.id===p.negocioId);if(n)return n}
+  const e=String(email||"").trim().toLowerCase();return e?S.negocios.find(n=>String(n.email||"").trim().toLowerCase()===e)||null:null}
+function subDe(n){
+  const cs=new Set((S.pagos||[]).filter(p=>p.negocioId===n.id&&p.clienteStripe).map(p=>p.clienteStripe));const e=String(n.email||"").trim().toLowerCase();
+  return SUBS().filter(s=>cs.has(s.clienteStripe)||(e&&String(s.email||"").trim().toLowerCase()===e)).sort((a,b)=>String(b.creada||"").localeCompare(String(a.creada||"")))[0]||null}
+const urlStripe=(tipo,id,modo)=>"https://dashboard.stripe.com/"+(modo==="real"?"":"test/")+tipo+"/"+id;
+const linkStripe=(tipo,id,modo)=>id?h("a",{class:"lk",href:urlStripe(tipo,id,modo),target:"_blank",rel:"noopener",onclick:e=>e.stopPropagation(),title:"Abrir en Stripe"},"Stripe ↗"):null;
+const fechaD=v=>v?fechaCorta(String(v).slice(0,10)):"—";
+const mesDe=v=>String(v||"").slice(0,7);
+const fechaYrel=v=>{if(!v)return"—";const f=String(v).slice(0,10),d=dias(hoyISO(),f);return fechaCorta(f)+(d!=null&&Math.abs(d)<=7?" · "+fechaRel(f):"")};
 
 /* ---------- Finanzas ---------- */
 const FIN={modo:lsGet("finmodo","")};
 function estadoPago(p){return{aplicado:["Unido a su ficha","ok"],nuevo:["Recibido","info"],por_confirmar:["Por confirmar","warn"],sin_lead:["Sin ficha","bad"],rechazado:["Separado","x"],ignorado:["Ignorado","x"]}[p.estado]||[p.estado||"—","x"]}
+const ESTADO_COBRO={pagada:["Pagada","ok"],fallida:["Fallida","bad"],pendiente:["Pendiente","warn"],void:["Anulada","x"],uncollectible:["Incobrable","bad"]};
 function graficoBarras(datos,fmt,tip){
   const max=Math.max(1,...datos.map(d=>d.v));const ult=datos.length-1;
   return h("div",null,
@@ -3513,45 +3535,93 @@ function graficoBarras(datos,fmt,tip){
 }
 function vistaFinanzas(m){
   const todos=(S.pagos||[]).filter(p=>p.estado!=="ignorado");
-  const reales=todos.filter(p=>p.modo!=="prueba"),prueba=todos.filter(p=>p.modo==="prueba");
-  const modo=FIN.modo||(reales.length?"real":"prueba");
-  const P=(modo==="real"?reales:prueba).slice().sort((a,b)=>String(b.fecha||"").localeCompare(String(a.fecha||"")));
-  const cli=clientesActivos();const pago=cli.filter(n=>!n.prueba);const mrr=mrrEstimado();
-  const mes=mesISO();const delMes=P.filter(p=>String(p.fecha||"").slice(0,7)===mes);
-  const sum=(xs,k)=>xs.reduce((s,p)=>s+toN(p[k]),0);
-  const pend=S.negocios.filter(n=>n.etapa==="Pago pendiente"&&!n.prueba);
-  const pendV=pend.reduce((s,n)=>s+(PLANES[n.plan]||0),0);
+  const esReal=x=>(x.modo||"prueba")==="real";
+  const hayReal=todos.some(esReal)||SUBS().some(esReal)||COBROS().some(esReal);
+  const modo=FIN.modo||(hayReal?"real":"prueba");const delModo=x=>esReal(x)===(modo==="real");
+  const P=todos.filter(delModo).sort((a,b)=>String(b.fecha||"").localeCompare(String(a.fecha||"")));
+  const SS=SUBS().filter(delModo),CC=COBROS().filter(delModo).sort((a,b)=>String(b.fecha||"").localeCompare(String(a.fecha||"")));
+  const conStripe=SS.length>0||CC.length>0;
+  const cli=clientesActivos();const pago=cli.filter(n=>!n.prueba);
+  const vivas=SS.filter(subViva);const mrrS=vivas.reduce((s,x)=>s+toN(x.baseMensual),0);
+  const mrr=conStripe?mrrS:mrrEstimado();
+  const mes=mesISO();const sum=(xs,k)=>xs.reduce((s,p)=>s+toN(p[k]),0);
+  const pagadas=CC.filter(c=>c.estado==="pagada");
+  const base=conStripe?pagadas:P;
+  const delMes=base.filter(p=>mesDe(p.fecha)===mes);
+  const pend=S.negocios.filter(n=>n.etapa==="Pago pendiente"&&!n.prueba);const pendV=pend.reduce((s,n)=>s+(PLANES[n.plan]||0),0);
   const trial=cli.filter(n=>n.prueba);const trialV=trial.reduce((s,n)=>s+(PLANES[n.plan]||PLANES.Content),0);
-  const avisos=todos.filter(p=>p.estado==="por_confirmar"||p.estado==="sin_lead");
-  m.append(cabecera("Finanzas","Lo que entra cada mes y lo que está por cobrar. Importes de Stripe; la cuota mensual sale del plan de cada cliente.",
+  const cuenta=f=>SUBS().filter(f).length+todos.filter(f).length;
+  m.append(cabecera("Finanzas","Lo que entra cada mes y lo que está por cobrar. Datos de Stripe; lo que aún no ha pagado sale de las fichas del CRM.",
     h("div",{class:"seg",role:"group","aria-label":"Tipo de pagos"},
-      h("button",{type:"button","aria-pressed":String(modo==="real"),onclick:()=>{FIN.modo="real";lsSet("finmodo","real");render()}},"Reales",h("b",{text:String(reales.length)})),
-      h("button",{type:"button","aria-pressed":String(modo==="prueba"),onclick:()=>{FIN.modo="prueba";lsSet("finmodo","prueba");render()}},"De prueba",h("b",{text:String(prueba.length)})))));
-  if(modo==="prueba")m.append(h("div",{class:"banner"},h("span",{text:"🧪"}),h("div",null,h("b",{text:"Pagos de prueba. "}),"Stripe está en modo prueba: estos importes no son dinero real. Cuando entren cobros reales, esta página los mostrará por defecto.")));
-  m.append(h("div",{class:"stats"},
-    stat("Cuota mensual (MRR)",eur0(mrr),plural(pago.length,"cliente de pago","clientes de pago")+" · sin IVA",{cls:"hero",ico:"finanzas"}),
-    stat("Cobrado en "+mesLargo(mes).split(" ")[0],eur0(sum(delMes,"total")),delMes.length?"Base "+eur0(sum(delMes,"base"))+" + IVA "+eur0(sum(delMes,"iva")):"Sin cobros este mes",{ico:"calendario"}),
-    stat("Por cobrar",eur0(pendV),pend.length?plural(pend.length,"negocio espera","negocios esperan")+" el pago · cuota/mes":"Nadie esperando el pago",{href:"#flujo",ico:"tarea"}),
-    stat("En prueba gratuita",eur0(trialV),trial.length?plural(trial.length,"negocio","negocios")+" · cuota si pasan a pago":"Ninguno en prueba",{ico:"clientes"})));
+      h("button",{type:"button","aria-pressed":String(modo==="real"),onclick:()=>{FIN.modo="real";lsSet("finmodo","real");render()}},"Reales",h("b",{text:String(cuenta(esReal))})),
+      h("button",{type:"button","aria-pressed":String(modo==="prueba"),onclick:()=>{FIN.modo="prueba";lsSet("finmodo","prueba");render()}},"De prueba",h("b",{text:String(cuenta(x=>!esReal(x)))})))));
+  if(modo==="prueba")m.append(h("div",{class:"banner"},h("span",{text:"🧪"}),h("div",null,h("b",{text:"Datos de prueba. "}),"Stripe está en modo prueba: estos importes no son dinero real. Cuando entren cobros reales, esta página los mostrará por defecto.")));
+  /* Cobros fallidos */
+  const imp=SS.filter(s=>s.estado==="past_due"||s.estado==="unpaid"),fall=CC.filter(c=>c.estado==="fallida"&&!imp.some(s=>s.id===c.subId||(s.email&&s.email===c.email)));
+  if(imp.length||fall.length)m.append(h("div",{class:"banner",style:"background:var(--danger-bg)"},h("span",{text:"⛔"}),h("div",null,h("b",{text:"Cobros fallidos: "}),
+    [...imp.map(s=>{const n=negocioStripe(s.clienteStripe,s.email);return(n?n.nombre:s.nombre||s.email||"Cliente")+" ("+estadoSub(s)[0].toLowerCase()+")"}),
+     ...fall.map(c=>{const n=negocioStripe(c.clienteStripe,c.email);return(n?n.nombre:c.email||"Cliente")+" · "+eur2(toN(c.total))})].join(" · "),
+    ". Stripe reintenta el cobro solo; si no entra, escríbeles.")));
+  const avisos=P.filter(p=>p.estado==="por_confirmar"||p.estado==="sin_lead");
   if(avisos.length)m.append(h("div",{class:"banner"},h("span",{text:"⚠️"}),h("div",null,h("b",{text:plural(avisos.length,"pago necesita","pagos necesitan")+" revisión: "}),
     avisos.map(p=>(p.nombre||p.email||"Pago")+" · "+eur2(toN(p.total))+" ("+estadoPago(p)[0].toLowerCase()+")").join(" · ")," ",
     PAG.sinLead.length?h("button",{class:"linkbtn",type:"button",onclick:dialogoPagosSinLead},"Ver pagos sin ficha"):null)));
-  /* Cobros por mes (6 meses) */
-  const meses=mesesAtras(6);const porMes=meses.map(ym=>{const xs=P.filter(p=>String(p.fecha||"").slice(0,7)===ym);return{l:etiquetaMes(ym),ym,v:sum(xs,"total"),b:sum(xs,"base"),i:sum(xs,"iva"),n:xs.length}});
-  const graf=graficoBarras(porMes,eur0,d=>"<b>"+mesLargo(d.ym)+"</b><br>"+eur2(d.v)+" · "+plural(d.n,"cobro","cobros")+"<br>Base "+eur2(d.b)+" · IVA "+eur2(d.i));
-  /* MRR por plan */
-  const filasPlan=Object.keys(PLANES).map(k=>{const xs=pago.filter(n=>n.plan===k);return{l:k,s:plural(xs.length,"cliente","clientes")+" × "+PLANES[k]+" €",v:xs.length*PLANES[k]}});
-  const ads=pago.filter(n=>n.plan==="Scale"&&n.googleAds).length;if(ads)filasPlan.push({l:"Google Ads",s:plural(ads,"cliente","clientes")+" × "+GOOGLE_ADS_EUR+" €",v:ads*GOOGLE_ADS_EUR});
+  const com=sum(delMes,"comision"),neto=sum(delMes,"neto");
+  m.append(h("div",{class:"stats"},
+    stat("Cuota mensual (MRR)",eur0(mrr),conStripe?plural(vivas.length,"suscripción activa","suscripciones activas")+" · sin IVA":plural(pago.length,"cliente de pago","clientes de pago")+" · sin IVA",{cls:"hero",ico:"finanzas"}),
+    stat("Cobrado en "+mesLargo(mes).split(" ")[0],eur0(sum(delMes,"total")),delMes.length?(com?"Neto "+eur0(neto)+" tras "+eur0(com)+" de comisión":"Base "+eur0(sum(delMes,"base"))+" + IVA "+eur0(sum(delMes,"iva"))):"Sin cobros este mes",{ico:"calendario"}),
+    stat("Por cobrar",eur0(pendV),pend.length?plural(pend.length,"negocio espera","negocios esperan")+" el pago · cuota/mes":"Nadie esperando el pago",{href:"#flujo",ico:"tarea"}),
+    stat("En prueba gratuita",eur0(trialV),trial.length?plural(trial.length,"negocio","negocios")+" · cuota si pasan a pago":"Ninguno en prueba",{ico:"clientes"})));
+  /* Cobros por mes */
+  const porMes=mesesAtras(6).map(ym=>{const xs=base.filter(p=>mesDe(p.fecha)===ym);
+    return{l:etiquetaMes(ym),ym,v:sum(xs,"total"),b:sum(xs,"base"),i:sum(xs,"iva"),c:sum(xs,"comision"),ne:sum(xs,"neto"),n:xs.length,r:xs.filter(x=>x.motivo==="renovación").length}});
+  const graf=graficoBarras(porMes,eur0,d=>"<b>"+mesLargo(d.ym)+"</b><br>"+eur2(d.v)+" · "+plural(d.n,"cobro","cobros")+(d.r?" ("+d.r+" renov.)":"")+"<br>Base "+eur2(d.b)+" · IVA "+eur2(d.i)+(d.c?"<br>Comisión "+eur2(d.c)+" · Neto "+eur2(d.ne):""));
+  /* Cuota por plan */
+  let filasPlan;
+  if(conStripe)filasPlan=Object.keys(PLANES).map(k=>{const xs=vivas.filter(s=>capPlan(s.plan)===k);return{l:k,s:plural(xs.length,"suscripción","suscripciones"),v:xs.reduce((t,s)=>t+toN(s.baseMensual),0)}});
+  else{filasPlan=Object.keys(PLANES).map(k=>{const xs=pago.filter(n=>n.plan===k);return{l:k,s:plural(xs.length,"cliente","clientes")+" × "+PLANES[k]+" €",v:xs.length*PLANES[k]}});
+    const ads=pago.filter(n=>n.plan==="Scale"&&n.googleAds).length;if(ads)filasPlan.push({l:"Google Ads",s:plural(ads,"cliente","clientes")+" × "+GOOGLE_ADS_EUR+" €",v:ads*GOOGLE_ADS_EUR})}
   const maxP=Math.max(1,...filasPlan.map(x=>x.v));
   const reparto=h("div",{class:"hb"},filasPlan.map(x=>h("div",{class:"hb-r"},h("span",{class:"hb-l"},h("b",{text:x.l}),h("small",{text:x.s})),h("span",{class:"hb-t"},h("i",{style:"width:"+(x.v*100/maxP)+"%"})),h("b",{text:eur0(x.v)}))),
-    h("div",{class:"note",text:"Cuota de lista sin IVA de los clientes de pago activos. Google Ads +"+GOOGLE_ADS_EUR+" €: cifra pendiente de cerrar con Stevan."}));
+    h("div",{class:"note",text:conStripe?"Cuota sin IVA de las suscripciones activas en Stripe (Scale incluye Google Ads si lo lleva).":"Cuota de lista sin IVA de los clientes de pago activos. Google Ads +"+GOOGLE_ADS_EUR+" €: cifra pendiente de cerrar con Stevan."}));
   m.append(h("div",{class:"grid2"},
     tarjetaPanel("Cobros por mes",h("span",{class:"note",text:"Total con IVA · últimos 6 meses"}),h("div",{class:"card-b"},graf,
-      h("div",{class:"note",text:"Por ahora llega el primer pago de cada alta. Las renovaciones mensuales de Stripe se añadirán aquí cuando el script las lea."}))),
+      conStripe?null:h("div",{class:"note",text:"Todavía no hay datos de suscripciones de Stripe: se muestran los pagos de alta."}))),
     tarjetaPanel("Cuota mensual por plan",null,h("div",{class:"card-b"},reparto))));
-  /* Tabla de cobros */
+  /* Suscripciones */
+  if(SS.length){const lim=sumarDias(hoyISO(),30);const prox=vivas.filter(s=>s.proximoCobro&&String(s.proximoCobro).slice(0,10)<=lim);
+    const orden=SS.slice().sort((a,b)=>(subViva(b)-subViva(a))||String(a.proximoCobro||"").localeCompare(String(b.proximoCobro||"")));
+    m.append(tarjetaPanel("Suscripciones",h("span",{class:"note",text:prox.length?"Próximos 30 días: "+plural(prox.length,"cobro","cobros")+" · "+eur0(prox.reduce((t,s)=>t+toN(s.baseMensual),0))+" + IVA":plural(vivas.length,"activa","activas")}),
+      h("div",{class:"dt-wrap"},h("table",{class:"dt cards"},
+        h("thead",null,h("tr",null,["Negocio","Plan","Estado","Cuota/mes","Próximo cobro","Desde",""].map((t,i)=>h("th",{class:i===3?"r":"",text:t})))),
+        h("tbody",null,orden.map(s=>{const n=negocioStripe(s.clienteStripe,s.email);const[et,ec]=estadoSub(s);
+          return h("tr",{tabindex:"0",onclick:()=>{if(n)abrirFicha(n.id,"resumen")}},
+            h("td",null,h("div",{class:"dt-n",style:"min-width:150px"},h("div",null,h("b",{text:n?n.nombre:(s.nombre||s.email||"—")}),h("span",{text:s.email||""})))),
+            h("td",{"data-l":"Plan",text:(capPlan(s.plan)||s.plan||"—")+(siV(s.googleAds)?" + Ads":"")}),
+            h("td",{"data-l":"Estado"},h("span",{class:"pill "+ec,text:et})),
+            h("td",{class:"r","data-l":"Cuota/mes",text:eur2(toN(s.baseMensual))}),
+            h("td",{"data-l":"Próximo cobro",text:s.proximoCobro&&subViva(s)?fechaYrel(s.proximoCobro):"—"}),
+            h("td",{"data-l":"Desde",text:fechaD(s.creada)}),
+            h("td",{"data-l":"Stripe"},linkStripe("subscriptions",s.id,modo)))}))))));}
+  /* Cobros (facturas de Stripe: alta y renovaciones) */
+  if(conStripe)m.append(tarjetaPanel("Cobros",h("span",{class:"note",text:plural(CC.length,"factura","facturas")+" · últimos 180 días"}),
+    CC.length?h("div",{class:"dt-wrap"},h("table",{class:"dt cards"},
+      h("thead",null,h("tr",null,["Fecha","Negocio","Motivo","Base","IVA","Total","Comisión","Neto","Estado",""].map((t,i)=>h("th",{class:i>=3&&i<=7?"r":"",text:t})))),
+      h("tbody",null,CC.map(c=>{const n=negocioStripe(c.clienteStripe,c.email);const[et,ec]=ESTADO_COBRO[c.estado]||[c.estado||"—","x"];const hay=v=>v!==""&&v!=null;
+        return h("tr",{tabindex:"0",onclick:()=>{if(n)abrirFicha(n.id,"resumen")}},
+          h("td",{text:fechaD(c.fecha)}),
+          h("td",{"data-l":"Negocio"},h("div",{class:"dt-n",style:"min-width:140px"},h("div",null,h("b",{text:n?n.nombre:(c.email||"—")}),h("span",{text:n?c.email||"":""})))),
+          h("td",{"data-l":"Motivo",text:c.motivo?c.motivo.charAt(0).toUpperCase()+c.motivo.slice(1):"—"}),
+          h("td",{class:"r","data-l":"Base",text:eur2(toN(c.base))}),h("td",{class:"r","data-l":"IVA",text:eur2(toN(c.iva))}),h("td",{class:"r","data-l":"Total"},h("b",{text:eur2(toN(c.total))})),
+          h("td",{class:"r muted","data-l":"Comisión",text:hay(c.comision)?eur2(toN(c.comision)):"—"}),h("td",{class:"r","data-l":"Neto",text:hay(c.neto)?eur2(toN(c.neto)):"—"}),
+          h("td",{"data-l":"Estado"},h("span",{class:"pill "+ec,text:et})),
+          h("td",{"data-l":"Factura"},c.factura?h("a",{class:"lk",href:c.factura,target:"_blank",rel:"noopener",onclick:e=>e.stopPropagation()},"Factura ↗"):null))})),
+      h("tfoot",null,h("tr",null,h("td",{text:"Cobrado"}),h("td"),h("td"),h("td",{class:"r",text:eur2(sum(pagadas,"base"))}),h("td",{class:"r",text:eur2(sum(pagadas,"iva"))}),h("td",{class:"r",text:eur2(sum(pagadas,"total"))}),
+        h("td",{class:"r",text:eur2(sum(pagadas,"comision"))}),h("td",{class:"r",text:eur2(sum(pagadas,"neto"))}),h("td",{colspan:"2"})))))
+    :h("div",{class:"card-b"},h("div",{class:"empty",text:"Sin facturas en los últimos 180 días."}))));
+  /* Altas por pago (Checkout): a qué ficha se unió cada pago */
   const nombreDe=id=>{const n=S.negocios.find(x=>x.id===id);return n?n.nombre:null};
-  m.append(tarjetaPanel("Cobros",h("button",{class:"btn small",type:"button",onclick:()=>exportar("pagos"),html:icono("exportar")+"<span>CSV</span>"}),
+  m.append(tarjetaPanel(conStripe?"Altas por pago · a qué ficha se unieron":"Cobros",h("button",{class:"btn small",type:"button",onclick:()=>exportar("pagos"),html:icono("exportar")+"<span>CSV</span>"}),
     P.length?h("div",{class:"dt-wrap"},h("table",{class:"dt cards"},
       h("thead",null,h("tr",null,["Fecha","Negocio","Plan","Base","IVA","Total","Estado","Facturación"].map((t,i)=>h("th",{class:i>=3&&i<=5?"r":"",text:t})))),
       h("tbody",null,P.map(p=>{const nn=p.negocioId?nombreDe(p.negocioId):null;const[et,ec]=estadoPago(p);
@@ -3561,15 +3631,14 @@ function vistaFinanzas(m){
           h("td",{"data-l":"Plan",text:(capPlan(p.plan)||p.plan||"—")+(p.googleAds?" + Ads":"")}),
           h("td",{class:"r","data-l":"Base",text:eur2(toN(p.base))}),h("td",{class:"r","data-l":"IVA",text:eur2(toN(p.iva))}),h("td",{class:"r","data-l":"Total"},h("b",{text:eur2(toN(p.total))})),
           h("td",{"data-l":"Estado"},h("span",{class:"pill "+ec,text:et})),
-          h("td",{"data-l":"Facturación",class:"muted",text:[p.empresa,p.nif].filter(Boolean).join(" · ")||"—"}))})),
-      h("tfoot",null,h("tr",null,h("td",{text:"Total"}),h("td"),h("td"),h("td",{class:"r",text:eur2(sum(P,"base"))}),h("td",{class:"r",text:eur2(sum(P,"iva"))}),h("td",{class:"r",text:eur2(sum(P,"total"))}),h("td",{colspan:"2"})))))
+          h("td",{"data-l":"Facturación",class:"muted",text:[p.empresa,p.nif].filter(Boolean).join(" · ")||"—"}))}))))
     :h("div",{class:"card-b"},h("div",{class:"empty",text:modo==="real"?"Todavía no hay cobros reales. Los pagos de Stripe aparecerán aquí solos.":"No hay pagos de prueba."}))));
   /* Esperando pago */
   if(pend.length)m.append(tarjetaPanel("Esperando el pago",h("span",{class:"note",text:eur0(pendV)+" al mes si pagan"}),h("div",{class:"dt-wrap"},h("table",{class:"dt cards"},
     h("thead",null,h("tr",null,["Negocio","Plan","Cuota/mes","Esperando desde","Lo lleva"].map((t,i)=>h("th",{class:i===2?"r":"",text:t})))),
     h("tbody",null,pend.map(n=>{const d=(n.hitos||{})["Pago pendiente"]||n.fechaEntrada;
       return h("tr",{tabindex:"0",onclick:()=>abrirFicha(n.id,"resumen")},h("td",null,h("b",{text:n.nombre||"Sin nombre"})),h("td",{"data-l":"Plan",text:n.plan||"—"}),
-        h("td",{class:"r","data-l":"Cuota/mes",text:PLANES[n.plan]?eur0(PLANES[n.plan]):"—"}),h("td",{"data-l":"Esperando desde",text:d?fechaCorta(d)+" · "+fechaRel(d):"—"}),h("td",{"data-l":"Lo lleva",text:n.responsable||"Sin asignar"}))}))))));
+        h("td",{class:"r","data-l":"Cuota/mes",text:PLANES[n.plan]?eur0(PLANES[n.plan]):"—"}),h("td",{"data-l":"Esperando desde",text:fechaYrel(d)}),h("td",{"data-l":"Lo lleva",text:n.responsable||"Sin asignar"}))}))))));
 }
 
 /* ---------- Captación ---------- */

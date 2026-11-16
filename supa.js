@@ -21,7 +21,9 @@ const T={
   formularios:{pk:"submission_id",soloLectura:true,cols:"submission_id enviado_en gratis confirmacion bienvenida datos negocio_id unido procesado creado"},
   reservas:{pk:"event_id",soloLectura:true,cols:"event_id inicio fin nombre apellido email telefono negocio_txt tipo estado actualizado confirmacion_reserva negocio_id procesado"},
   pagos:{pk:"session_id",soloLectura:true,cols:"session_id fecha plan email nombre empresa nif base iva total suscripcion cliente_stripe ref_lead modo google_ads negocio_id estado via procesado"},
-  ajustes:{pk:"clave",cols:"clave valor actualizado"}
+  ajustes:{pk:"clave",cols:"clave valor actualizado"},
+  stripe_suscripciones:{pk:"sub_id",soloLectura:true,cols:"sub_id cliente_stripe email nombre plan google_ads estado base_mensual proximo_cobro cancela_al_final creada cancelada modo actualizado"},
+  stripe_cobros:{pk:"cobro_id",soloLectura:true,cols:"cobro_id fecha cliente_stripe email sub_id motivo base iva total comision neto estado modo factura"}
 };
 for(const k in T)T[k].set=new Set(T[k].cols.split(" "));
 /* nombres que no siguen la regla automática */
