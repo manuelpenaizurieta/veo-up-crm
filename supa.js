@@ -115,34 +115,95 @@ window.claude={use:async n=>{await promesaListo;return n==="db"?db:n==="user"?us
 window.VEOUP_RPC=async(fn,args)=>{const{error}=await sb.rpc(fn,args);if(error)throw aErr(error)};
 
 /* ---------- pantalla de entrada ---------- */
-function pantalla(html){let el=document.getElementById("login");if(!el){el=document.createElement("div");el.id="login";document.body.append(el)}el.innerHTML=html;return el}
-function formularioEntrada(msg){
-  const el=pantalla('<div class="lg-box"><div class="lg-logo">VEO <b>UP</b> <span>CRM</span></div>'+
-    '<form id="lg-f"><label for="lg-email">Tu email</label><input id="lg-email" type="email" required autocomplete="email" placeholder="nombre@correo.com">'+
-    '<button type="submit">Enviarme el enlace para entrar</button></form><p id="lg-msg" role="status"></p></div>');
-  const m=el.querySelector("#lg-msg");if(msg)m.textContent=msg;
-  el.querySelector("#lg-f").addEventListener("submit",async e=>{e.preventDefault();const em=el.querySelector("#lg-email").value.trim().toLowerCase();
-    const b=el.querySelector("button");b.disabled=true;m.textContent="Enviando…";
-    const{error}=await sb.auth.signInWithOtp({email:em,options:{emailRedirectTo:CFG.redirect||location.origin,shouldCreateUser:true}});
-    b.disabled=false;m.textContent=error?"No se pudo enviar: "+(error.message||"error")+". Prueba de nuevo en unos minutos.":"Listo: revisa tu correo ("+em+") y pulsa el enlace. Puedes cerrar esta pestaña.";});
+/* Pantalla de entrada: panel de marca (escritorio) + tarjeta. Mensajes neutros: no revela qué emails tienen acceso. */
+const esc=t=>String(t||"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+function pantalla(tarjeta){
+  let el=document.getElementById("login");
+  if(!el){el=document.createElement("div");el.id="login";document.body.append(el);document.body.classList.add("lg-on")}
+  el.innerHTML='<aside class="lg-marca" aria-hidden="true"><img class="lg-logo-o" src="media/logo-oscuro.png" alt="" width="240" height="49">'+
+    '<div class="lg-claim"><p class="lg-k">Haz que te vean.</p><p class="lg-k lg-k2">Haz que te elijan.</p>'+
+    '<p class="lg-sub">El CRM del equipo de VEO UP: leads, pagos, Content Days y contenido en un solo sitio.</p></div>'+
+    '<p class="lg-pie">Pequeños gigantes · Valencia</p></aside>'+
+    '<main class="lg-panel"><div class="lg-card"><img class="lg-logo-c" src="media/logo-claro.png" alt="VEO UP" width="168" height="34">'+tarjeta+'</div>'+
+    '<p class="lg-legal">Acceso solo para el equipo de VEO UP.</p></main>';
+  return el;
 }
+const MSG={
+  enviando:"Enviando…",
+  limite:"Has pedido varios enlaces seguidos. Espera un minuto y vuelve a intentarlo.",
+  red:"No hay conexión. Revisa tu internet y vuelve a intentarlo.",
+  servidor:"No hemos podido enviar el enlace ahora mismo. Inténtalo de nuevo en unos minutos.",
+  formato:"Escribe un email válido, por ejemplo nombre@correo.com.",
+  caducado:"Ese enlace ha caducado o ya se usó. Pide uno nuevo."
+};
+async function pedirEnlace(email){
+  let error=null;
+  try{({error}=await sb.auth.signInWithOtp({email,options:{emailRedirectTo:CFG.redirect||location.origin,shouldCreateUser:false}}))}
+  catch(e){return"red"}
+  if(!error)return null;
+  const t=(error.message||"")+" "+(error.code||"")+" "+(error.status||"");
+  if(/signup|not allowed|user not found|otp_disabled|422/i.test(t))return null;   /* email sin acceso: respuesta neutra */
+  if(/rate|too many|429|seconds/i.test(t))return"limite";
+  if(/fetch|network/i.test(t))return"red";
+  return"servidor";
+}
+function formularioEntrada(aviso,emailPrevio){
+  const el=pantalla('<h1 class="lg-h">Entra en tu CRM</h1><p class="lg-p">Te enviamos un enlace a tu email. Sin contraseñas.</p>'+
+    '<form id="lg-f" novalidate><label class="lg-l" for="lg-email">Email</label>'+
+    '<input id="lg-email" class="lg-in" type="email" name="email" inputmode="email" autocomplete="email" autocapitalize="none" spellcheck="false" required placeholder="nombre@correo.com" value="'+esc(emailPrevio)+'" aria-describedby="lg-msg">'+
+    '<button class="lg-btn" type="submit"><span class="lg-btn-t">Enviarme el enlace</span><span class="lg-spin" aria-hidden="true"></span></button>'+
+    '<p id="lg-msg" class="lg-msg'+(aviso?" err":"")+'" role="alert" aria-live="polite">'+esc(aviso?MSG[aviso]||aviso:"")+'</p></form>');
+  const f=el.querySelector("#lg-f"),inp=el.querySelector("#lg-email"),btn=el.querySelector(".lg-btn"),m=el.querySelector("#lg-msg");
+  setTimeout(()=>inp.focus(),50);
+  f.addEventListener("submit",async e=>{e.preventDefault();
+    const em=inp.value.trim().toLowerCase();
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(em)){m.className="lg-msg err";m.textContent=MSG.formato;inp.setAttribute("aria-invalid","true");inp.focus();return}
+    inp.removeAttribute("aria-invalid");btn.disabled=true;btn.classList.add("cargando");m.className="lg-msg";m.textContent=MSG.enviando;
+    const fallo=await pedirEnlace(em);
+    btn.disabled=false;btn.classList.remove("cargando");
+    if(fallo){m.className="lg-msg err";m.textContent=MSG[fallo];return}
+    pantallaEnviado(em);
+  });
+}
+function pantallaEnviado(email){
+  const el=pantalla('<div class="lg-ok" aria-hidden="true"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg></div>'+
+    '<h1 class="lg-h">Revisa tu correo</h1><p class="lg-p">Si <b>'+esc(email)+'</b> tiene acceso, te llegará un enlace en un minuto. Ábrelo en este dispositivo.</p>'+
+    '<button class="lg-btn" type="button" id="lg-re" disabled>Reenviar en 60 s</button>'+
+    '<button class="lg-link" type="button" id="lg-otro">Usar otro email</button>'+
+    '<p id="lg-msg" class="lg-msg" role="status" aria-live="polite">¿No lo ves? Mira en spam o promociones.</p>');
+  const re=el.querySelector("#lg-re"),m=el.querySelector("#lg-msg");let t=60,iv=null;
+  const tic=()=>{t--;if(t<=0){clearInterval(iv);re.disabled=false;re.textContent="Reenviar el enlace"}else re.textContent="Reenviar en "+t+" s"};
+  iv=setInterval(tic,1000);
+  re.addEventListener("click",async()=>{re.disabled=true;re.textContent=MSG.enviando;const fallo=await pedirEnlace(email);
+    if(fallo){m.className="lg-msg err";m.textContent=MSG[fallo];re.disabled=false;re.textContent="Reenviar el enlace";return}
+    m.className="lg-msg";m.textContent="Enviado de nuevo.";t=60;re.textContent="Reenviar en 60 s";iv=setInterval(tic,1000)});
+  el.querySelector("#lg-otro").addEventListener("click",()=>{clearInterval(iv);formularioEntrada("",email)});
+  setTimeout(()=>el.querySelector("#lg-otro").focus(),50);
+}
+function pantallaCargando(){pantalla('<div class="lg-cargando" role="status"><span class="lg-spin"></span> Comprobando tu sesión…</div>')}
 async function entrar(ses){
   SES=ses;
   const{data,error}=await sb.from("equipo").select("nombre,email").eq("user_id",ses.user.id).maybeSingle();
-  if(error||!data){pantalla('<div class="lg-box"><div class="lg-logo">VEO <b>UP</b> <span>CRM</span></div><p>Tu cuenta ('+(ses.user.email||"")+
-    ') no tiene acceso a este CRM. Pide a Manu que la añada.</p><button id="lg-out">Salir</button></div>').querySelector("#lg-out").onclick=salir;return}
+  if(error||!data){
+    const el=pantalla('<div class="lg-ok lg-no" aria-hidden="true"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M5.6 5.6l12.8 12.8"/></svg></div>'+
+      '<h1 class="lg-h">Este email no tiene acceso</h1><p class="lg-p"><b>'+esc(ses.user.email)+'</b> no está dado de alta en el CRM de VEO UP. Si crees que es un error, escribe a Manu.</p>'+
+      '<button class="lg-btn lg-sec" type="button" id="lg-out">Salir y usar otro email</button>');
+    el.querySelector("#lg-out").onclick=salir;return}
   EQ=data;
   try{if(!localStorage.getItem("veoupcrm:yo"))localStorage.setItem("veoupcrm:yo",JSON.stringify(data.nombre))}catch(e){}
-  const el=document.getElementById("login");if(el)el.remove();
+  const el=document.getElementById("login");if(el)el.remove();document.body.classList.remove("lg-on");
   const s=document.createElement("button");s.id="lg-salir";s.type="button";s.textContent="Salir ("+data.nombre+")";s.onclick=salir;document.body.append(s);
   listo();
 }
 async function salir(){await sb.auth.signOut();location.replace(location.origin+location.pathname)}
 const arrancar=async()=>{
+  pantallaCargando();
+  const hash=new URLSearchParams(location.hash.slice(1));
   const{data}=await sb.auth.getSession();
-  if(data&&data.session){await entrar(data.session);return}
-  const err=new URLSearchParams(location.hash.slice(1)).get("error_description");
-  formularioEntrada(err?"El enlace no es válido o ha caducado: pide uno nuevo.":"");
+  if(data&&data.session){if(location.hash)history.replaceState(null,"",location.pathname);await entrar(data.session);return}
+  const err=hash.get("error_description")||hash.get("error");
+  if(location.hash)history.replaceState(null,"",location.pathname);
+  formularioEntrada(err?"caducado":"");
   sb.auth.onAuthStateChange((ev,ses)=>{if(ses&&!SES)entrar(ses)});
 };
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",arrancar);else arrancar();

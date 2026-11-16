@@ -10,13 +10,63 @@
 <meta name="theme-color" content="#101010">
 <meta name="apple-mobile-web-app-title" content="CRM VEO UP">
 <style>:root{color-scheme:light;box-sizing:border-box}body{margin:0;padding:0}[hidden]{display:none!important}
-#login{position:fixed;inset:0;z-index:9999;display:grid;place-items:center;background:#101010;color:#F7F7F2;font-family:Inter,system-ui,sans-serif;padding:16px}
-#login .lg-box{width:100%;max-width:360px;display:flex;flex-direction:column;gap:14px}
-#login .lg-logo{font:700 28px Sora,Inter,sans-serif;letter-spacing:.02em}#login .lg-logo b{color:#38D66B}#login .lg-logo span{font-size:14px;opacity:.7;margin-left:4px}
-#login form{display:flex;flex-direction:column;gap:10px}#login label{font-size:14px;opacity:.85}
-#login input{font:inherit;padding:12px 14px;border-radius:12px;border:1px solid #333;background:#1b1b1b;color:#F7F7F2;min-height:46px}
-#login button{font:600 15px Inter,sans-serif;padding:12px 14px;border-radius:999px;border:0;background:#38D66B;color:#101010;min-height:46px;cursor:pointer}
-#login button:disabled{opacity:.6}#login p{font-size:14px;line-height:1.45;opacity:.9;margin:0}
+/* ---------- Pantalla de entrada (marca: #101010 · #F7F7F2 · verde #38D66B solo en la acción · #EAECE9) ---------- */
+body.lg-on{overflow:hidden}
+#login{position:fixed;inset:0;z-index:9999;display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);background:#F7F7F2;color:#101010;
+  font-family:Inter,ui-sans-serif,system-ui,sans-serif;-webkit-font-smoothing:antialiased;overflow:auto}
+#login *{box-sizing:border-box}
+.lg-marca{position:relative;overflow:hidden;background:#101010;color:#F7F7F2;display:flex;flex-direction:column;justify-content:space-between;padding:48px 56px;min-height:100%;
+  background-image:radial-gradient(120% 80% at 100% 100%,rgba(56,214,107,.20) 0%,rgba(56,214,107,0) 55%),radial-gradient(60% 50% at 0% 0%,rgba(247,247,242,.06) 0%,rgba(247,247,242,0) 70%)}
+.lg-marca::after{content:"";position:absolute;right:-120px;bottom:-120px;width:420px;height:420px;border:1px solid rgba(56,214,107,.25);border-radius:50%;pointer-events:none}
+.lg-logo-o{width:168px;height:auto;display:block}
+.lg-claim{max-width:520px}
+.lg-k{margin:0;font:700 clamp(36px,4.2vw,60px)/1.04 Sora,Inter,sans-serif;letter-spacing:-.02em}
+.lg-k2{color:#38D66B}
+.lg-sub{margin:22px 0 0;max-width:420px;font-size:16px;line-height:1.5;color:rgba(247,247,242,.72)}
+.lg-pie{margin:0;font-size:13px;letter-spacing:.04em;color:rgba(247,247,242,.5)}
+.lg-panel{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:48px 24px;min-height:100%}
+.lg-card{width:100%;max-width:420px;background:#fff;border:1px solid #EAECE9;border-radius:24px;padding:40px 36px;box-shadow:0 1px 2px rgba(16,16,16,.04),0 24px 48px -24px rgba(16,16,16,.18)}
+.lg-logo-c{display:none;width:132px;height:auto;margin:0 0 28px}
+.lg-h{margin:0;font:700 28px/1.15 Sora,Inter,sans-serif;letter-spacing:-.01em;color:#101010}
+.lg-p{margin:10px 0 26px;font-size:15px;line-height:1.5;color:#4a4a47}
+.lg-p b{color:#101010;font-weight:600;word-break:break-all}
+.lg-l{display:block;margin:0 0 8px;font-size:14px;font-weight:600;color:#101010}
+.lg-in{display:block;width:100%;font:500 16px Inter,sans-serif;color:#101010;background:#fff;border:1.5px solid #D9DBD7;border-radius:14px;padding:0 16px;height:54px;transition:border-color .15s,box-shadow .15s}
+.lg-in::placeholder{color:#8a8a85}
+.lg-in:hover{border-color:#b8bab5}
+.lg-in:focus{outline:none;border-color:#101010;box-shadow:0 0 0 4px rgba(16,16,16,.10)}
+.lg-in[aria-invalid="true"]{border-color:#C0352B;box-shadow:0 0 0 4px rgba(192,53,43,.12)}
+.lg-btn{position:relative;display:flex;align-items:center;justify-content:center;gap:10px;width:100%;height:54px;margin-top:14px;border:0;border-radius:999px;
+  background:#38D66B;color:#101010;font:600 16px Inter,sans-serif;cursor:pointer;transition:transform .08s,filter .15s}
+.lg-btn:hover:not(:disabled){filter:brightness(.96)}
+.lg-btn:active:not(:disabled){transform:translateY(1px)}
+.lg-btn:focus-visible,.lg-link:focus-visible{outline:3px solid #101010;outline-offset:3px}
+.lg-btn:disabled{cursor:default;background:#EAECE9;color:#5f5f5b}
+.lg-btn.lg-sec{background:#101010;color:#F7F7F2}
+.lg-btn .lg-spin{display:none}
+.lg-btn.cargando .lg-spin{display:inline-block}
+.lg-btn.cargando{background:#38D66B;color:#101010}
+.lg-spin{width:18px;height:18px;border-radius:50%;border:2.5px solid currentColor;border-right-color:transparent;animation:lg-g .7s linear infinite;vertical-align:-3px}
+@keyframes lg-g{to{transform:rotate(360deg)}}
+.lg-link{display:block;width:100%;margin-top:10px;height:46px;border:0;background:transparent;color:#101010;font:600 15px Inter,sans-serif;text-decoration:underline;text-underline-offset:3px;cursor:pointer;border-radius:12px}
+.lg-msg{min-height:22px;margin:14px 0 0;font-size:14px;line-height:1.45;color:#4a4a47}
+.lg-msg.err{color:#B3261E;font-weight:500}
+.lg-ok{width:52px;height:52px;border-radius:16px;display:grid;place-items:center;background:#E6F9EC;color:#167a3a;margin-bottom:20px}
+.lg-ok.lg-no{background:#FBEAE8;color:#B3261E}
+.lg-cargando{display:flex;align-items:center;gap:12px;font-size:15px;color:#4a4a47;padding:8px 0}
+.lg-legal{margin:0;font-size:13px;color:#6b6b66}
+@media (max-width:860px){
+  #login{grid-template-columns:1fr;grid-template-rows:auto 1fr;background:#F7F7F2}
+  .lg-marca{min-height:0;padding:max(28px,env(safe-area-inset-top)) 22px 76px;gap:28px;justify-content:flex-start}
+  .lg-marca::after{width:260px;height:260px;right:-90px;bottom:-110px}
+  .lg-logo-o{width:124px}
+  .lg-k{font-size:32px}
+  .lg-sub,.lg-pie{display:none}
+  .lg-panel{justify-content:flex-start;padding:0 16px 28px;margin-top:-52px;position:relative}
+  .lg-card{padding:28px 22px;border-radius:20px}
+  .lg-h{font-size:24px}
+}
+@media (prefers-reduced-motion:reduce){.lg-spin{animation-duration:1.6s}.lg-btn,.lg-in{transition:none}}
 #lg-salir{position:fixed;right:12px;bottom:12px;z-index:50;font:500 12px Inter,sans-serif;padding:6px 10px;border-radius:999px;border:1px solid rgba(0,0,0,.15);background:rgba(255,255,255,.9);color:#101010;cursor:pointer}
 </style>
 <meta name="claude:viewport-fit-sides" content="cover">
