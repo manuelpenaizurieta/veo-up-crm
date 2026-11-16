@@ -199,16 +199,27 @@ async function entrar(ses){
   try{if(!localStorage.getItem("veoupcrm:yo"))localStorage.setItem("veoupcrm:yo",JSON.stringify(data.nombre))}catch(e){}
   const el=document.getElementById("login");if(el)el.remove();document.body.classList.remove("lg-on");
   const s=document.createElement("button");s.id="lg-salir";s.type="button";s.textContent="Salir ("+data.nombre+")";s.onclick=salir;document.body.append(s);
+  recuperarVista();
   listo();
 }
 async function salir(){await sb.auth.signOut();location.replace(location.origin+location.pathname)}
+/* La vista (#salud, #hoy…) se conserva: solo se limpian del enlace los datos del inicio de sesión.
+   Si hay que iniciar sesión, se recuerda la vista y se recupera al volver del enlace mágico. */
+const esVista=()=>/^#[a-z]+$/.test(location.hash);
+const VISTA_K="veoupcrm:vista_tras_entrar";
+const limpiarHash=()=>{if(location.hash&&!esVista())history.replaceState(null,"",location.pathname+location.search)};
+function recuperarVista(){
+  let v=null;try{v=localStorage.getItem(VISTA_K);localStorage.removeItem(VISTA_K)}catch(e){}
+  if(!esVista()&&v&&/^#[a-z]+$/.test(v)){history.replaceState(null,"",location.pathname+location.search+v);window.dispatchEvent(new HashChangeEvent("hashchange"))}
+}
 const arrancar=async()=>{
   pantallaCargando();
+  if(esVista())try{localStorage.setItem(VISTA_K,location.hash)}catch(e){}
   const hash=new URLSearchParams(location.hash.slice(1));
   const{data}=await sb.auth.getSession();
-  if(data&&data.session){if(location.hash)history.replaceState(null,"",location.pathname);await entrar(data.session);return}
+  if(data&&data.session){limpiarHash();await entrar(data.session);return}
   const err=hash.get("error_description")||hash.get("error");
-  if(location.hash)history.replaceState(null,"",location.pathname);
+  limpiarHash();
   formularioEntrada(err?"caducado":"");
   sb.auth.onAuthStateChange((ev,ses)=>{if(ses&&!SES)entrar(ses)});
 };

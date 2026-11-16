@@ -75,7 +75,7 @@ body.lg-on{overflow:hidden}
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sora:wght@500;600;700&display=swap">
 <style>
-/* CRM VEO UP · v9.37 · 2026-11-16 (eliminar fichas y fichas de prueba en la web; modo web sobre Supabase; el QR se reconoce por el texto del mensaje, sin «(QR)»; Cliente con reserva confirmada pasa solo a Content Day agendado; pie de tarjeta en dos filas iguales; selector De pago/Gratis y etiqueta GRATIS/PAGO; tareas automáticas del Content Day; botón «Email» en la tarjeta; no se unen formularios con WhatsApp distinto aunque compartan email; reservas «PRUEBA…» se aplican si casan con un lead; modo gratis: «Confirmación enviada = Gratis…» → Cliente con prueba gratuita; flujo por plan: Content → Pago pendiente; Growth y Scale → Reunión antes del pago; horas siempre en formato 24 h; los leads del formulario entran directos en Pago pendiente; con el correo de confirmación pasa solo a Pago pendiente; un descartado que vuelve a enviar el formulario vuelve al flujo; plan y Google Ads del formulario y del pago; bienvenida tras el pago puede salir del script; pagos de Stripe desde la pestaña «Pagos» → Cliente + bienvenida automática; enlace de pago en la ficha; botones «Enviar bienvenida» y «Escribir correo» vía cola de Drive → start@veoup.es; repaso cada 30 s con la pestaña visible; un formulario nuevo de un lead que ya existe sustituye sus datos y deja aviso «Formulario actualizado»; reservas en la pestaña «Reservas» de la hoja de Tally (por nombre o por su columna «Event ID»), vía .xlsx; reservas del Content Day desde la hoja de start@veoup.es; lee «Bienvenida enviada» de la hoja) · antes v9.16 · 2026-11-13 (Pago pendiente vuelve a pedir solo plan y pago; check de fit en Revisión; 8 etapas: sin «Aprobado», de Revisión a Pago pendiente; check de fit sin mínimo para aprobar; 9 etapas: sin «Formulario completado»; hora real de envío del formulario; cada paso de etapa pide sus datos; Aprobado pide check de fit; datos obligatorios por etapa en todas las vías de mover; botón Descartar en tarjeta y ficha; resumen de la ficha en tres secciones; tiempo máximo en Drive; diagnóstico de Drive; cámara múltiple, referencias y comentarios del nuevo Tally; sincronización automática cada 3 min; salud del sistema, MRR, resumen; formularios de Tally desde Google Drive; tema claro, alta rápida, botón +, calendario con color y agenda; barra lateral, alertas, KPIs, embudo y medición, ficha con requisitos y línea de tiempo, WhatsApp, notas, tareas, contenido, Hoy, calendario)
+/* CRM VEO UP · v9.38 · 2026-11-16 (salud del sistema en la web; eliminar fichas y fichas de prueba en la web; modo web sobre Supabase; el QR se reconoce por el texto del mensaje, sin «(QR)»; Cliente con reserva confirmada pasa solo a Content Day agendado; pie de tarjeta en dos filas iguales; selector De pago/Gratis y etiqueta GRATIS/PAGO; tareas automáticas del Content Day; botón «Email» en la tarjeta; no se unen formularios con WhatsApp distinto aunque compartan email; reservas «PRUEBA…» se aplican si casan con un lead; modo gratis: «Confirmación enviada = Gratis…» → Cliente con prueba gratuita; flujo por plan: Content → Pago pendiente; Growth y Scale → Reunión antes del pago; horas siempre en formato 24 h; los leads del formulario entran directos en Pago pendiente; con el correo de confirmación pasa solo a Pago pendiente; un descartado que vuelve a enviar el formulario vuelve al flujo; plan y Google Ads del formulario y del pago; bienvenida tras el pago puede salir del script; pagos de Stripe desde la pestaña «Pagos» → Cliente + bienvenida automática; enlace de pago en la ficha; botones «Enviar bienvenida» y «Escribir correo» vía cola de Drive → start@veoup.es; repaso cada 30 s con la pestaña visible; un formulario nuevo de un lead que ya existe sustituye sus datos y deja aviso «Formulario actualizado»; reservas en la pestaña «Reservas» de la hoja de Tally (por nombre o por su columna «Event ID»), vía .xlsx; reservas del Content Day desde la hoja de start@veoup.es; lee «Bienvenida enviada» de la hoja) · antes v9.16 · 2026-11-13 (Pago pendiente vuelve a pedir solo plan y pago; check de fit en Revisión; 8 etapas: sin «Aprobado», de Revisión a Pago pendiente; check de fit sin mínimo para aprobar; 9 etapas: sin «Formulario completado»; hora real de envío del formulario; cada paso de etapa pide sus datos; Aprobado pide check de fit; datos obligatorios por etapa en todas las vías de mover; botón Descartar en tarjeta y ficha; resumen de la ficha en tres secciones; tiempo máximo en Drive; diagnóstico de Drive; cámara múltiple, referencias y comentarios del nuevo Tally; sincronización automática cada 3 min; salud del sistema, MRR, resumen; formularios de Tally desde Google Drive; tema claro, alta rápida, botón +, calendario con color y agenda; barra lateral, alertas, KPIs, embudo y medición, ficha con requisitos y línea de tiempo, WhatsApp, notas, tareas, contenido, Hoy, calendario)
    Layout: cabecera negra fija con pestañas (Flujo · Agenda · Exportar). En Flujo: panel de medición plegable,
    filtros, tira de etapas (resumen y destino de arrastre) y tablero de 8 columnas agrupadas en 4 fases,
    deslizable en móvil. Ficha a pantalla completa; diálogo inferior para mover. Marca VEO UP. */
@@ -1321,7 +1321,7 @@ function flujoMedicion(ws){
 function fuentes(){
   const w=ultimaSemana();const hora=new Date().toLocaleString("es-ES",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit",hourCycle:"h23"});
   return h("footer",{class:"fuentes mono"},
-    h("div",{text:"Fuentes · CRM: base de datos de este artifact, en vivo (" +hora+")."}),
+    h("div",{text:(SUPA?"Fuentes · CRM: Supabase, en tiempo real (":"Fuentes · CRM: base de datos de este artifact, en vivo (")+hora+")."}),
     h("div",{text:"GA4 (p563877093) y Tally (Yj0JvN): cifras apuntadas a mano por semana"+(w?"; última: "+fechaCorta(w.desde)+"–"+fechaLarga(w.hasta)+", consultada el "+fechaLarga(w.consultado):"; ninguna apuntada todavía")+". Vacío = sin dato."}));
 }
 
@@ -1699,6 +1699,9 @@ const COLS={negocios:["id",...CAMPOS,"prueba","googleAds","pruebaInterna","tally
   piezas:["id","negocioId","mes","tipo","titulo","estado","orden","creado","actualizado"],
   eventos:["id","fecha","hora","tipo","titulo","negocioId","responsable","autorNombre","creado"],
   incidencias:["id","fecha","check","nombre","estado","anterior","detalle"],
+  correos:["id","negocioId","tipo","para","asunto","estado","detalle","enviadoEn","autorNombre","creado"],
+  pagos:["id","fecha","plan","googleAds","total","base","iva","modo","estado","via","email","nombre","empresa","nif","suscripcion","clienteStripe","refLead","negocioId","procesado"],
+  reservas:["id","inicio","fin","estado","tipo","negocioTxt","nombre","apellido","email","telefono","negocioId","actualizado"],
   web_semanas:["id","desde","hasta","consultado","sesiones","sesionesQR","navFormulario","tallyInicios","waClick","waClickQR","formView","formStep","formSubmit","tallyVisitas","tallyEnvios","notas","autor","creado","actualizado"],
   ciclos:["id","negocioId","mes","fase","contentDay","entrega","bloqueo","notas","creado","actualizado"]};
 async function exportar(col){
@@ -1714,14 +1717,16 @@ function vistaExportar(m){
     h("div",{class:"box"},h("div",{class:"rowx"},h("div",null,h("b",{text:"Tema"}),h("div",{class:"note",text:"Claro con los colores de la web (por defecto) u oscuro. Se guarda en este navegador."})),
       h("div",{class:"seg",role:"group","aria-label":"Tema"},[["light","Claro"],["dark","Oscuro"]].map(([k,t])=>h("button",{type:"button","aria-pressed":String((document.documentElement.getAttribute("data-theme")||"light")===k),onclick:()=>{if((document.documentElement.getAttribute("data-theme")||"light")!==k)cambiarTema()}},t)))))));
   m.append(h("section",{class:"sec"},h("h2",{text:"Exportar datos"}),
-    h("p",{class:"note",text:"Cada tabla se descarga como CSV separado por punto y coma (se abre en Excel y Google Sheets). Sirve de copia y para mudar los datos a otra herramienta, como Supabase, cuando haga falta."}),
-    dl?null:h("div",{class:"status",text:"La descarga no está disponible en esta vista. Abre el CRM desde claude.ai en el navegador."}),
+    h("p",{class:"note",text:SUPA?"Cada tabla se descarga como CSV separado por punto y coma (se abre en Excel y Google Sheets). Sirve de copia de seguridad.":"Cada tabla se descarga como CSV separado por punto y coma (se abre en Excel y Google Sheets). Sirve de copia y para mudar los datos a otra herramienta, como Supabase, cuando haga falta."}),
+    dl?null:h("div",{class:"status",text:SUPA?"La descarga no está disponible en este navegador.":"La descarga no está disponible en esta vista. Abre el CRM desde claude.ai en el navegador."}),
     fila("negocios","Negocios","Etapa, contacto, origen, plan, fit y siguiente paso"),
     fila("actividades","Notas e historial","Notas del equipo y cambios de etapa"),
     fila("tareas","Tareas","Con responsable, fecha y si están hechas"),
     fila("piezas","Plan de contenido","Piezas por cliente y mes, con su estado"),
     fila("eventos","Calendario","Reuniones, notas con fecha y eventos sin ficha"),
-    fila("incidencias","Incidencias","Historial de la salud del sistema"),
+    SUPA?fila("correos","Correos","Bienvenidas y correos enviados, con su estado"):fila("incidencias","Incidencias","Historial de la salud del sistema"),
+    SUPA?fila("pagos","Pagos","Pagos de Stripe y a qué ficha se unieron"):null,
+    SUPA?fila("reservas","Reservas","Citas del Content Day"):null,
     fila("web_semanas","Semanas de medición","GA4 y Tally apuntados a mano, con fecha"),
     S.ciclos.length?fila("ciclos","Ciclos (versión anterior)","Registros del CRM v2"):null));
 }
@@ -1902,7 +1907,7 @@ function dialogoBorrarFicha(n){
     try{await borrarFicha(n);cerrarDialogo();if(abierto&&abierto.id===n.id)cerrarFicha();toast("«"+(n.nombre||"Ficha")+"» eliminada");render()}
     catch(err){e.target.disabled=false;toast("No se pudo eliminar ("+(err&&err.code||"error")+")")}};
   dialogo("Eliminar «"+(n.nombre||"ficha")+"»",
-    h("div",{class:"note",text:"Se borran la ficha y todo lo suyo: notas, tareas, correos, pagos y reservas. Si su formulario sigue en la hoja de Tally, no volverá a entrar. No se puede deshacer."}),
+    h("div",{class:"note",text:"Se borran la ficha y todo lo suyo: notas, tareas, correos, pagos y reservas. Lo que ya había llegado de esta ficha (formulario, pagos y reservas) no volverá a entrar. No se puede deshacer."}),
     h("div",{class:"box"},inp?campoDlg("dlg-borrar","Escribe «"+n.nombre+"» para confirmar",inp):null,
       h("div",{class:"actions"},h("button",{class:"btn ghost",type:"button",onclick:cerrarDialogo},"Cancelar"),h("button",{class:"btn danger",type:"button",onclick:ir},"Eliminar"))));
 }
@@ -1913,7 +1918,7 @@ function dialogoBorrarPruebas(){
     for(const n of ps){try{await borrarFicha(n);ok++}catch(err){mal++}}
     cerrarDialogo();toast(ok+" ficha"+(ok!==1?"s":"")+" de prueba eliminada"+(ok!==1?"s":"")+(mal?" · "+mal+" no se pudieron borrar":""));render()};
   dialogo("Borrar "+ps.length+" ficha"+(ps.length>1?"s":"")+" de prueba",
-    h("div",{class:"note",text:"Se borran con todo su historial y no volverán a entrar desde la hoja. No se puede deshacer."}),
+    h("div",{class:"note",text:"Se borran con todo su historial, y lo que ya había llegado de ellas no volverá a entrar. No se puede deshacer."}),
     h("div",{class:"stack"},ps.map(n=>h("div",{class:"prop"},h("b",{text:n.nombre||"Sin nombre"}),h("span",{class:"note",text:" · "+(n.etapa||"")+(n.email?" · "+n.email:"")})))),
     h("div",{class:"box"},h("div",{class:"actions"},h("button",{class:"btn ghost",type:"button",onclick:cerrarDialogo},"Cancelar"),h("button",{class:"btn danger",type:"button",onclick:ir},"Borrar "+ps.length))));
 }
@@ -2774,7 +2779,16 @@ function barraSync(){
 /* ---------- Salud del sistema ----------
    Estados: ok (verde), aviso (ámbar), error (rojo), nc (gris: no comprobable desde aquí), pend (comprobando).
    Nunca se marca en verde lo que no se ha podido comprobar. */
-const CHECKS=[
+const CHECKS=SUPA?[
+  ["auto","Automatizaciones","Correos, pagos y reservas que se procesan solos cada minuto"],
+  ["espejo","Entrada de datos","Formularios, pagos y reservas que llegan al CRM"],
+  ["db","Base de datos","Lectura real de la base, con su tiempo de respuesta"],
+  ["form_ult","Último formulario recibido","Ámbar si hace más de 7 días; rojo si más de 14"],
+  ["correos","Cola de correos","Bienvenidas y correos que salen desde start@veoup.es"],
+  ["sinunir","Pagos y reservas sin ficha","Los que no se han podido unir a ningún lead"],
+  ["web","Web www.veoup.es","Si la página principal responde"],
+  ["formulario","Formulario www.veoup.es/formulario","Si la página del formulario responde"],
+  ["medicion","Medición (GTM-MJM75GLF)","Si el código de Google Tag Manager está en la web; no lee datos de GA4"]]:[
   ["drive","Google Drive · hoja de formularios","Lectura de la hoja «Empecemos con tu contenido» con tu conector de Google Drive"],
   ["form_ult","Último formulario recibido","Ámbar si hace más de 7 días; rojo si más de 14"],
   ["db","Base de datos del CRM","Escritura y lectura de prueba en la base del artifact"],
@@ -2793,7 +2807,7 @@ function ponerSalud(k,estado,detalle){
 /* Historial: solo se escribe cuando una comprobación CAMBIA de estado (nunca dentro de un onSnapshot ni en cada lectura) */
 const GUARDADO={};
 async function registrarIncidencia(k,estado,detalle){
-  if(!db||!canWrite)return;
+  if(SUPA||!db||!canWrite)return;
   const doc=S.salud.find(x=>x.id==="estado_"+k);const prev=k in GUARDADO?GUARDADO[k]:(doc&&doc.estado);
   if(prev===estado)return;GUARDADO[k]=estado;
   const ahora=new Date().toISOString();const nombre=(CHECKS.find(c=>c[0]===k)||[k,k])[1];
@@ -2842,7 +2856,104 @@ function saludDesdeSync(ok,info){
     else ponerSalud("form_ult","nc","No se puede saber sin leer la hoja");
   }
 }
+/* ---------- Salud en la web (Supabase) ----------
+   Todo con datos reales: el latido que deja el Apps Script cada minuto en ajustes («latido_automatizaciones»),
+   lecturas de la base y peticiones a www.veoup.es. Sin escrituras de prueba. */
+const TAREAS_AUTO={confirmarNuevos:"Correo a cada formulario nuevo",procesarCola:"Envío de la cola de correos",bienvenidaPorPago:"Bienvenida tras el pago",confirmarReservas:"Confirmación de reservas",espejoSupabase:"Entrada de datos al CRM"};
+const LATIDO={valor:null};
+function haceTxt(ms){const s=Math.max(0,Math.round(ms/1000));return s<60?"hace "+s+" s":s<3600?"hace "+Math.round(s/60)+" min":s<86400?"hace "+Math.round(s/3600)+" h":"hace "+Math.round(s/86400)+" días"}
+const fmtFH=d=>new Date(d).toLocaleString("es-ES",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit",hourCycle:"h23"});
+const tareaOk=e=>String(e==null?"":e).trim().toLowerCase()==="ok";
+const tareaError=e=>String(e==null?"":e).replace(/^\s*error\s*:?\s*/i,"").trim();
+async function saludDB(sb){
+  if(!sb){ponerSalud("db","error","Sin conexión con la base de datos");return null}
+  const t0=performance.now();
+  const r=await conTiempo(sb.from("ajustes").select("clave,valor,actualizado"),8000,{timeout:true});
+  const ms=Math.round(performance.now()-t0);
+  if(r.timeout){ponerSalud("db","error","No respondió en 8 s");return null}
+  if(r.error){ponerSalud("db","error","No se pudo leer ("+(r.error.code||"error")+")");return null}
+  ponerSalud("db",ms>3000?"aviso":"ok",(ms>3000?"Responde, pero lenta: ":"Lee correctamente en ")+ms+" ms");
+  return r.data||[];
+}
+function saludLatido(filas){
+  if(!filas){LATIDO.valor=null;ponerSalud("auto","nc","Sin lectura de la base: no se puede saber");ponerSalud("espejo","nc","Sin lectura de la base: no se puede saber");return}
+  const f=filas.find(x=>x.clave==="latido_automatizaciones");
+  const v=f&&f.valor&&typeof f.valor==="object"?f.valor:null;LATIDO.valor=v;
+  if(!v||!v.at||isNaN(new Date(v.at))){ponerSalud("auto","aviso","Todavía no hay ningún registro de las automatizaciones");ponerSalud("espejo","nc","Sin registro de las automatizaciones");return}
+  const edad=Date.now()-new Date(v.at).getTime();
+  const mal=Object.entries(v.tareas||{}).filter(([,e])=>!tareaOk(e));const n=Object.keys(v.tareas||{}).length;
+  const parada=edad>3*60000;
+  ponerSalud("auto",edad>10*60000?"error":parada||mal.length?"aviso":"ok",
+    (parada?"Paradas desde "+fmtFH(v.at)+" ("+haceTxt(edad)+")":"Última vuelta "+haceTxt(edad))+
+    (mal.length?" · falla: "+mal.map(([k])=>TAREAS_AUTO[k]||k).join(", "):n?" · "+n+" tareas bien":""));
+  const eAt=v.espejo_ultimo_error_at&&!isNaN(new Date(v.espejo_ultimo_error_at))?new Date(v.espejo_ultimo_error_at).getTime():0;
+  const eEd=eAt?Date.now()-eAt:Infinity;
+  const ahoraMal=v.tareas&&"espejoSupabase" in v.tareas&&!tareaOk(v.tareas.espejoSupabase);
+  if(edad>10*60000)ponerSalud("espejo","error","No entra nada nuevo: las automatizaciones están paradas");
+  else if(ahoraMal)ponerSalud("espejo","error","Falla ahora: "+(tareaError(v.tareas.espejoSupabase)||v.espejo_ultimo_error||"sin detalle"));
+  else if(eEd<15*60000)ponerSalud("espejo","aviso","Error "+haceTxt(eEd)+" (ya se recuperó): "+(v.espejo_ultimo_error||"sin detalle"));
+  else if(parada)ponerSalud("espejo","aviso","Sin noticias desde "+fmtFH(v.at));
+  else ponerSalud("espejo","ok","Formularios, pagos y reservas entran bien"+(eAt?" · último error: "+fmtFH(eAt):""));
+}
+async function saludForm(sb){
+  if(!sb){ponerSalud("form_ult","nc","Sin conexión con la base de datos");return}
+  const r=await conTiempo(sb.from("formularios").select("enviado_en").not("enviado_en","is",null).order("enviado_en",{ascending:false}).limit(1),8000,{timeout:true});
+  if(r.timeout||r.error){ponerSalud("form_ult","nc","No se pudo leer el último formulario");return}
+  const u=r.data&&r.data[0]&&r.data[0].enviado_en;
+  if(!u){ponerSalud("form_ult","nc","Todavía no ha llegado ningún formulario");return}
+  const dl=new Date(u);const ymd=dl.getFullYear()+"-"+pad(dl.getMonth()+1)+"-"+pad(dl.getDate());const d=dias(ymd,hoyISO());
+  ponerSalud("form_ult",d>14?"error":d>7?"aviso":"ok","Último envío: "+fmtFH(u)+" ("+(d<=0?"hoy":d===1?"ayer":"hace "+d+" días")+")");
+}
+function saludCorreos(){
+  const ahora=Date.now();const t=x=>new Date(x||0).getTime();
+  const atasc=S.correos.filter(c=>(c.estado==="pendiente"&&ahora-t(c.creado)>5*60000)||(c.estado==="enviando"&&ahora-t(c.creado)>10*60000));
+  const err=S.correos.filter(c=>c.estado==="error");const err24=err.filter(c=>ahora-t(c.enviadoEn||c.creado)<864e5);
+  const cola=S.correos.filter(c=>c.estado==="pendiente"||c.estado==="enviando").length;
+  const pl=(k,a,b)=>k+" "+(k===1?a:b);
+  if(err24.length)ponerSalud("correos","error",pl(err24.length,"correo","correos")+" con error en las últimas 24 h"+(err24[0].detalle?": "+err24[0].detalle:""));
+  else if(atasc.length)ponerSalud("correos","aviso",pl(atasc.length,"correo lleva","correos llevan")+" más de 5 min esperando a salir");
+  else ponerSalud("correos","ok",(cola?pl(cola,"correo","correos")+" en cola, saliendo":"Ningún correo atascado")+(err.length?" · "+pl(err.length,"error antiguo","errores antiguos"):""));
+}
+function saludSinUnir(){
+  const p=PAG.sinLead.length,r=RES.sinLead.length;
+  ponerSalud("sinunir",p||r?"aviso":"ok",p||r?[p?p+" pago"+(p>1?"s":""):"",r?r+" reserva"+(r>1?"s":""):""].filter(Boolean).join(" y ")+" sin ficha: están en Avisos, en la vista Flujo":"Todos los pagos y reservas están unidos a su ficha");
+}
+async function saludWeb(){
+  const pedir=async u=>{const t0=performance.now();
+    try{const r=await conTiempo(fetch(u,{cache:"no-store"}),10000,null);if(!r)return{fallo:"no respondió en 10 s"};
+      return{ok:r.ok,st:r.status,ms:Math.round(performance.now()-t0),html:r.ok?await r.text():""}}
+    catch(e){ /* si el navegador no deja leerla, al menos se mira si responde */
+      try{const r=await conTiempo(fetch(u,{mode:"no-cors",cache:"no-store"}),10000,null);if(!r)return{fallo:"no respondió en 10 s"};return{ok:true,opaca:true,ms:Math.round(performance.now()-t0)}}
+      catch(e2){return{fallo:"no responde"}}}};
+  const[w,f]=await Promise.all([pedir("https://www.veoup.es/"),pedir("https://www.veoup.es/formulario/")]);
+  const una=(k,x)=>x.fallo?ponerSalud(k,"error","La página "+x.fallo):!x.ok?ponerSalud(k,"error","Responde con error "+x.st):ponerSalud(k,x.ms>4000?"aviso":"ok",(x.ms>4000?"Responde, pero lenta: ":"Responde en ")+x.ms+" ms");
+  una("web",w);una("formulario",f);
+  const lee=x=>x.ok&&!x.opaca,tiene=x=>/GTM-MJM75GLF/.test(x.html||"");
+  if(!lee(w)&&!lee(f)){ponerSalud("medicion","nc",w.opaca||f.opaca?"El navegador no deja leer el código de la web desde aquí":"No se puede mirar: la web no responde");return}
+  const falta=[lee(w)&&!tiene(w)?"inicio":"",lee(f)&&!tiene(f)?"formulario":""].filter(Boolean);
+  const visto=[lee(w)?"inicio":"",lee(f)?"formulario":""].filter(Boolean);
+  ponerSalud("medicion",falta.length?"error":"ok",falta.length?"Falta el código de GTM en: "+falta.join(" y "):"El código de GTM está en "+visto.join(" y ")+" · no lee datos de GA4");
+}
+async function comprobarSupa(manual){
+  if(SALUD.corriendo)return;
+  if(manual){if(Date.now()-SALUD.ultManual<10000){toast("Espera unos segundos antes de volver a comprobar");return}SALUD.ultManual=Date.now()}
+  SALUD.corriendo=true;renderPronto();
+  try{
+    const sb=window.VEOUP_SB||null;
+    saludCorreos();saludSinUnir();
+    await conTiempo(Promise.all([saludDB(sb).then(saludLatido),saludForm(sb),saludWeb()]),20000,null);
+    for(const[k]of CHECKS)if(!SALUD.res[k]||SALUD.res[k].estado==="pend")ponerSalud(k,"aviso","No terminó a tiempo; se repite en un minuto");
+  }finally{SALUD.corriendo=false;SALUD.ultima=new Date().toISOString();renderPronto()}
+}
+/* Se comprueba sola: cada minuto con la pestaña Salud a la vista; cada 5 min en las demás (para el aviso rojo de arriba) */
+function cadaSalud(){
+  if(!SUPA||document.hidden||!allReady()||SALUD.corriendo)return;
+  const cada=vista()==="salud"?60000:300000;
+  if(!SALUD.ultima||Date.now()-new Date(SALUD.ultima).getTime()>=cada-3000)comprobarSupa(false);
+}
+if(SUPA){setInterval(cadaSalud,15000);document.addEventListener("visibilitychange",cadaSalud);window.addEventListener("hashchange",()=>{if(vista()==="salud"&&(!SALUD.ultima||Date.now()-new Date(SALUD.ultima).getTime()>20000))comprobarSupa(false)})}
 async function comprobarTodo(manual){
+  if(SUPA)return comprobarSupa(manual);
   /* Una sola vez por carga; «Comprobar ahora» como mucho cada 30 s */
   if(SALUD.corriendo)return;
   if(!manual){if(SALUD.hechoCarga)return;SALUD.hechoCarga=true}
@@ -2860,10 +2971,33 @@ function resumenSalud(){const v=Object.values(SALUD.res);return{rojo:v.filter(x=
 function bannerSalud(){
   const caidos=CHECKS.filter(([k])=>SALUD.res[k]&&SALUD.res[k].estado==="error");
   if(!caidos.length)return null;
-  return h("div",{class:"banner-rojo",role:"alert"},h("b",{text:"Hay "+(caidos.length===1?"una conexión caída":caidos.length+" conexiones caídas")+": "}),
+  return h("div",{class:"banner-rojo",role:"alert"},h("b",{text:SUPA?(caidos.length===1?"Algo no funciona: ":caidos.length+" cosas no funcionan: "):"Hay "+(caidos.length===1?"una conexión caída":caidos.length+" conexiones caídas")+": "}),
     h("span",{text:caidos.map(c=>c[1]).join(" · ")}),h("a",{href:"#salud",text:"Ver salud del sistema →"}));
 }
+function vistaSaludWeb(m){
+  const r=resumenSalud();const nc=CHECKS.filter(([k])=>SALUD.res[k]&&SALUD.res[k].estado==="nc").length;
+  const tit=!SALUD.ultima?"Comprobando…":r.rojo?(r.rojo===1?"1 cosa no funciona":r.rojo+" cosas no funcionan"):r.ambar?(r.ambar===1?"1 cosa necesita atención":r.ambar+" cosas necesitan atención"):"Todo funciona";
+  const v=LATIDO.valor;const tareas=v&&v.tareas?Object.entries(v.tareas):[];
+  const eAt=v&&v.espejo_ultimo_error_at&&!isNaN(new Date(v.espejo_ultimo_error_at))?v.espejo_ultimo_error_at:"";
+  m.append(h("div",{class:"sec-h"},h("div",null,h("div",{class:"label",text:"Salud del sistema"}),h("h1",{class:"titular",text:tit}),
+      h("div",{class:"note",text:(SALUD.ultima?"Última comprobación: "+fmtFH(SALUD.ultima):"Primera comprobación en curso")+" · se repite sola cada minuto"+(nc?" · "+nc+" sin poder comprobar":"")})),
+      h("button",{class:"btn dark",type:"button",disabled:SALUD.corriendo,onclick:()=>comprobarSupa(true)},SALUD.corriendo?"Comprobando…":"Comprobar ahora")),
+    h("div",{class:"salud-grid"},CHECKS.map(([k,t,d])=>{const x=SALUD.res[k]||{estado:"pend",detalle:""};
+      return h("div",{class:"salud-card s-"+x.estado},
+        h("div",{class:"rowx"},h("span",{class:"semaforo s-"+x.estado,"aria-hidden":"true"}),h("span",{class:"s-txt",text:ETQ_SALUD[x.estado]})),
+        h("b",{text:t}),h("div",{class:"note",text:x.detalle||d}),
+        h("div",{class:"s-at",text:x.at&&x.estado!=="pend"?"Comprobado: "+fmtFH(x.at):"—"}))})),
+    h("section",{class:"sec"},h("div",{class:"sec-h"},h("h2",{text:"Automatizaciones, una a una"}),v&&v.at?h("span",{class:"count",text:"vuelta "+haceTxt(Date.now()-new Date(v.at).getTime())}):null),
+      tareas.length?h("div",{class:"box scroll-x"},h("table",{class:"t"},h("thead",null,h("tr",null,["Tarea","Estado","Detalle"].map(x=>h("th",{text:x})))),
+        h("tbody",null,tareas.map(([k,e])=>h("tr",null,h("td",{text:TAREAS_AUTO[k]||k}),
+          h("td",null,h("span",{class:"s-pill s-"+(tareaOk(e)?"ok":"error"),text:tareaOk(e)?"Funciona":"Falla"})),
+          h("td",{class:"t-wrap",text:tareaOk(e)?"—":tareaError(e)||"Sin detalle"})))))):
+      h("div",{class:"empty",text:v?"El último registro no trae el detalle de las tareas.":"Todavía no hay registro de las automatizaciones."}),
+      h("p",{class:"note",text:eAt?"Último error al recibir datos: "+fmtFH(eAt)+(v.espejo_ultimo_error?" · "+v.espejo_ultimo_error:""):"Sin errores registrados al recibir datos."})),
+    h("p",{class:"note",text:"Las automatizaciones van solas en el servidor cada minuto, aunque nadie tenga el CRM abierto. Gris = no se puede comprobar desde aquí (no se da por bueno)."}));
+}
 function vistaSalud(m){
+  if(SUPA)return vistaSaludWeb(m);
   const r=resumenSalud();const nc=CHECKS.filter(([k])=>SALUD.res[k]&&SALUD.res[k].estado==="nc").length;
   const tit=SALUD.corriendo&&!SALUD.ultima?"Comprobando conexiones…":r.rojo?(r.rojo===1?"1 conexión caída":r.rojo+" conexiones caídas"):r.ambar?(r.ambar===1?"1 conexión necesita atención":r.ambar+" conexiones necesitan atención"):"Todo lo comprobable funciona";
   const inc=[...S.incidencias].sort((a,b)=>(b.fecha||"").localeCompare(a.fecha||""));
@@ -2927,14 +3061,14 @@ render();
   if(!c||!c.use){statusMsg="Abre este CRM desde claude.ai con tu sesión iniciada para ver y guardar datos.";render();return}
   const timer=setTimeout(()=>{if(!allReady()){statusMsg="No consigo conectar con los datos todavía. Lo que ves puede no estar al día; la página sigue intentándolo.";render()}},10000);
   [db,usr,dl]=await Promise.all([c.use("db"),c.use("user"),c.use("downloads")]);
-  if(!db){clearTimeout(timer);statusMsg="No hay acceso a los datos en esta vista. Inicia sesión en claude.ai y abre el enlace del CRM.";render();return}
+  if(!db){clearTimeout(timer);statusMsg=SUPA?"No hay acceso a los datos. Recarga la página e inicia sesión.":"No hay acceso a los datos en esta vista. Inicia sesión en claude.ai y abre el enlace del CRM.";render();return}
   if(usr){myId=await usr.id();const w=await usr.can("data.write");if(w===false)canWrite=false}
   for(const col of Object.keys(S)){
     db.collection(col).onSnapshot(snap=>{
       S[col]=snap.docs.map(d=>{const x={id:d.id,...d.data()};return col==="negocios"?normNeg(x):x});
       if(SUPA&&(col==="negocios"||col==="pagos"||col==="reservas"))enriquecerSupa();
       if(!snap.metadata.fromCache)ready[col]=true;
-      if(allReady()){clearTimeout(timer);statusMsg="";if(!SYNC.auto){if(SUPA){SYNC.auto=true;SYNC.estado="ok";SYNC.msg="En tiempo real"}else{autoSincronizar();comprobarTodo(false)}}}
+      if(allReady()){clearTimeout(timer);statusMsg="";if(!SYNC.auto){if(SUPA){SYNC.auto=true;SYNC.estado="ok";SYNC.msg="En tiempo real";comprobarSupa(false)}else{autoSincronizar();comprobarTodo(false)}}}
       render();
     },err=>{ready[col]=true;statusMsg=err.code==="revoked"?"Ya no tienes acceso a estos datos.":"No se pudieron cargar los datos ("+col+"). Recarga la página más tarde.";render()});
   }
