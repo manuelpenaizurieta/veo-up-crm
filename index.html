@@ -2,6 +2,13 @@
 <html lang="es"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
+<title>CRM · VEO UP</title>
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#101010">
+<meta name="apple-mobile-web-app-title" content="CRM VEO UP">
 <style>:root{color-scheme:light;box-sizing:border-box}body{margin:0;padding:0}[hidden]{display:none!important}
 #login{position:fixed;inset:0;z-index:9999;display:grid;place-items:center;background:#101010;color:#F7F7F2;font-family:Inter,system-ui,sans-serif;padding:16px}
 #login .lg-box{width:100%;max-width:360px;display:flex;flex-direction:column;gap:14px}
@@ -12,12 +19,6 @@
 #login button:disabled{opacity:.6}#login p{font-size:14px;line-height:1.45;opacity:.9;margin:0}
 #lg-salir{position:fixed;right:12px;bottom:12px;z-index:50;font:500 12px Inter,sans-serif;padding:6px 10px;border-radius:999px;border:1px solid rgba(0,0,0,.15);background:rgba(255,255,255,.9);color:#101010;cursor:pointer}
 </style>
-<script src="config.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
-<script src="supa.js"></script>
-</head><body>
-<title>CRM Veo Up</title>
-<link rel="icon" type="image/png" sizes="32x32" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAEMklEQVR4nO2XvW8cRRjGfzOzH77Nnc/2OQ7CsRGWIwcoAClpQCA5QqmSBiEBFVAQRIFA0CEa/wehCB0SFRUIgYgoCIUDUpREEAKIRAnCYBOTDx/23fm+9nZn0MzaxB8HouFMkfdOutXczjzP+7zP+65W0CWiKG/4D6LRWBVb10QvgP+JiOw1+FYs2WvwrSQkOxxiJ7LfGHInwe8QsOFt0kMYdD0FDAaNVB6iT4ExdgmkwLQTdJIi3AgRyJyHbna6ymtPcccikZGfTR171obx423a0EoZfHkfuYNDKE9R+XCe6qcLqJzv/k9bCdGBYQZfmrBciX9psnT8EntmHkYN+aDBZPwdhBSSZDWmfrZM/eQiJjEIX2TJdCWQGqJDIxSeGkehaFytYj7+1WXumCcp/kSe4vOTaFLaF1Yov3OZwrPjqL05TKxRgSWrnEL2kxJTTBOan93g2nNn0Y0EYc/rRsCGrnbQtTZaSXSjsyb1OmVbAo2uxpg0Ra90MEaQ/NHGhALpKW7M/Ej8QwVVDDAaSm9MofYGREfuZuj1/dx66wIiCv+eALYxlQQl3LX1gk0+o5FdCKu2XbD32DUlEV7W0f5oxMqJKySVpiPcf3SUYP8e0pUOuekR1K4ws8EGuC0hXb7Odw4vkyvbYxdFdm1u19LZ0QhEIcArhUhfEU2WnPmEEAhhMzGOtN4gf4a2LUwGar9rNwv3cxvNyr5uZms6u0MN5VieucT8M18w8Mo+ho8/RN8DRYL78qTVDiLvkf5Ux9TiTWjeVnBXZ6MRRjrXGkvCKS0QUjqjOiHskjZIX6J9yeILZ6i+d5WxE49RfHGCTrnB+KlDEEpEqEiWE1bevoLwNivgbcu/bfvIZmkIxiOMTrPWsvLpBG/Ex3gGkQiElq71rj/5FclcjbFPpskfHUM3YryBnKtS2uzQOr/M0psXaX5dRuY9t6crAQPE31eQfZLkZov+p8dpfXmL2slFV8PCo6OUXp1C1xJkwac5V6FTXsUvhdw7+wTBgSGqHy1QfX/OzQCdGDrX6rS+XQHbonkvUzCr6fanoUk03kjIPacPI3ZLqBtkTtG5XEXHKf5UEaRBW+P3efx2eJbWxTJjs9OE9xfRq5qFI6dpnb+BwM4Dbd2BiFTmNge+btsuJpShdIx/P3YOUwG1O8Qog//gAMHBEvQJ6PeRoeLma99QP3Md1d+Hd1cEgUIOZR0gVeDmgCoEiLzKDrdTcuMI7FqC1CB3hTROLTL/+OcMHJskemQYORg40mktJv6uSuXdn2mcW0JGAbrVofbBNWQphFSTlttZdyQWcTOgbcl1o3ctQRZWX4Fppugkcc8BNRi6uulqm6QWI1HIwlo9DehmkqVoGzj0sqH0F/jmSfovCPQ2ZI/x7hDYFrLb61KvwmL/PzzQ2AEV1jHl1oVegtvoCtrL1/M/AXT+0Jq0lIwEAAAAAElFTkSuQmCC">
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -577,7 +578,11 @@ nav.tabs a .c.rojo{background:var(--danger);color:#fff}
 .btn.desc:hover{background:var(--danger-bg)}
 .btn.danger{background:var(--danger);color:#fff;border-color:var(--danger)}
 </style>
-
+<script src="config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="supa.js"></script>
+</head>
+<body>
 <header class="top">
   <div class="wrap">
     <div class="bar">
@@ -2851,5 +2856,5 @@ render();
   }
 })();
 </script>
-
-</body></html>
+</body>
+</html>
