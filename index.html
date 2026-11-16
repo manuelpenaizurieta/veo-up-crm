@@ -1214,7 +1214,8 @@ function alertas(){
   const tAtr=S.tareas.filter(t=>!t.hecha&&t.fecha&&t.fecha<hoy).length+N.filter(n=>n.proximaFecha&&n.proximaFecha<hoy).length;
   if(tAtr)al.push({n:tAtr,t:"tarea"+(tAtr>1?"s":"")+" o pasos atrasados",cta:"Ver Hoy",go:()=>location.hash="hoy",crit:true});
   const dow=(new Date().getDay()+6)%7;const lunes=sumarDias(hoy,-dow-7),domingo=sumarDias(lunes,6);
-  if(!S.web_semanas.some(w=>w.desde===lunes&&w.hasta===domingo))al.push({n:"!",t:"semana del "+fechaCorta(lunes)+" al "+fechaCorta(domingo)+" sin apuntar (GA4 y Tally)",cta:"Apuntar semana",go:()=>{location.hash="embudo";setTimeout(()=>fichaSemana(null),60)}});
+  /* recordatorio de anotar la semana (GA4/Tally): en la web nueva no va en Avisos; se apunta desde la pestaña Embudo */
+  if(!SUPA&&!S.web_semanas.some(w=>w.desde===lunes&&w.hasta===domingo))al.push({n:"!",t:"semana del "+fechaCorta(lunes)+" al "+fechaCorta(domingo)+" sin apuntar (GA4 y Tally)",cta:"Apuntar semana",go:()=>{location.hash="embudo";setTimeout(()=>fichaSemana(null),60)}});
   return al;
 }
 function titularFlujo(al){
