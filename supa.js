@@ -111,6 +111,12 @@ const permissions={state:async()=>"granted",request:async()=>"granted",manage:as
 let listo,promesaListo=new Promise(r=>listo=r);
 window.claude={use:async n=>{await promesaListo;return n==="db"?db:n==="user"?user:n==="downloads"?downloads:n==="permissions"?permissions:null}};
 
+/* Tras borrar una ficha por RPC: se quita ya de la caché (Realtime lo confirmará después) */
+window.VEOUP_QUITAR=neg=>{
+  if(CACHE.negocios&&CACHE.negocios.delete(neg))emitirPronto("negocios");
+  for(const t of["actividades","tareas","piezas","correos","pagos","reservas","formularios","eventos"]){const m=CACHE[t];if(!m)continue;let c=false;
+    for(const[k,f]of m)if(f.negocio_id===neg){m.delete(k);c=true}if(c)emitirPronto(t)}
+};
 /* RPC que usa la página (pagos por confirmar) */
 window.VEOUP_RPC=async(fn,args)=>{const{error}=await sb.rpc(fn,args);if(error)throw aErr(error)};
 
