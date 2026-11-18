@@ -66,11 +66,30 @@ async function cargar(t){
   CACHE[t]=m;
 }
 function escuchar(t){
+  let suscrito=false;
   sb.channel("rt_"+t).on("postgres_changes",{event:"*",schema:"public",table:t},p=>{
     const d=T[t];const m=CACHE[t]||(CACHE[t]=new Map());
     if(p.eventType==="DELETE"){const id=p.old&&p.old[d.pk];if(id!=null)m.delete(id)}else m.set(p.new[d.pk],p.new);
-    emitirPronto(t)}).subscribe();
+    emitirPronto(t)}).subscribe(st=>{
+      /* Al reconectar el canal, lo que llegó mientras estaba caído no se repite: se recarga */
+      if(st==="SUBSCRIBED"){if(suscrito)ponerAlDiaPronto();suscrito=true}});
 }
+/* Puesta al día (Manu, 2026-11-18: un lead nuevo no salía en una pestaña que llevaba rato abierta hasta recargar).
+   Realtime no reenvía lo que pasa mientras la pestaña duerme o se corta la red, así que se recargan las tablas abiertas
+   al volver a la pestaña, al recuperar la red, al reconectar un canal y cada 2 min con la pestaña a la vista. */
+let ultRecarga=Date.now(),recargando=false,tRecarga=null;
+async function ponerAlDia(){
+  if(recargando||!SES)return;recargando=true;
+  try{for(const t of Object.keys(SUBS)){if(!T[t]||!SUBS[t].length)continue;await cargar(t);emitir(t)}ultRecarga=Date.now()}
+  catch(e){console.warn("CRM: no se pudo poner al día",e)}
+  finally{recargando=false}
+}
+const ponerAlDiaPronto=()=>{clearTimeout(tRecarga);tRecarga=setTimeout(ponerAlDia,1500)};
+const siHaceRato=()=>{if(Date.now()-ultRecarga>15000)ponerAlDiaPronto()};
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")siHaceRato()});
+window.addEventListener("focus",siHaceRato);
+window.addEventListener("online",ponerAlDiaPronto);
+setInterval(()=>{if(document.visibilityState==="visible"&&Date.now()-ultRecarga>110000)ponerAlDia()},30000);
 const local=(t,f)=>{(CACHE[t]||(CACHE[t]=new Map())).set(f[T[t].pk],f);emitirPronto(t)};
 
 /* ---------- API tipo artifact ---------- */
