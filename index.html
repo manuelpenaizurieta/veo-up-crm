@@ -365,6 +365,12 @@ ol.how{margin:0;padding-left:20px;display:grid;gap:4px;font-size:13px}
 .pe-Aprobado{background:var(--info-bg)!important;color:var(--info)}
 .pe-Grabado{background:var(--warn-bg)!important;color:var(--warn)}
 .pe-Editado{background:var(--soft)!important}
+.prop{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--surface);border:1px solid var(--line);border-radius:12px;min-width:0}
+.prop-t{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.prop-e{font-size:12px;font-weight:600;padding:2px 9px;border-radius:999px;background:var(--soft);color:var(--fg)}
+.prop-pendiente{background:var(--info-bg);color:var(--info)}.prop-procesando{background:var(--warn-bg);color:var(--warn)}
+.prop-lista{background:var(--accent-bg);color:var(--accent-ink)}.prop-error{background:var(--danger-bg);color:var(--danger)}
+@media (max-width:520px){.prop{flex-direction:column;align-items:stretch}.prop .actions{justify-content:flex-start}}
 .pe-Entregado{background:var(--fg)!important;color:var(--bg)!important;border-color:var(--fg)!important}
 .pbar{height:8px;border-radius:4px;background:var(--soft);overflow:hidden}
 .pbar i{display:block;height:100%;background:var(--fg);border-radius:4px}
@@ -1079,7 +1085,7 @@ const ICON_CHEV='<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="tr
 document.documentElement.setAttribute("data-theme",lsGet("tema","light"));
 function cambiarTema(){const t=document.documentElement.getAttribute("data-theme")==="dark"?"light":"dark";document.documentElement.setAttribute("data-theme",t);lsSet("tema",t);render()}
 let db=null,usr=null,dl=null,myId=null,canWrite=true;
-const S={negocios:[],actividades:[],tareas:[],piezas:[],eventos:[],web_semanas:[],ciclos:[],formularios:[],sync:[],salud:[],incidencias:[],correos:[]};
+const S={negocios:[],actividades:[],tareas:[],piezas:[],eventos:[],web_semanas:[],ciclos:[],formularios:[],sync:[],salud:[],incidencias:[],correos:[],propuestas:[]};
 const ready={negocios:false,actividades:false,tareas:false,piezas:false,eventos:false,web_semanas:false,ciclos:false,formularios:false,sync:false,salud:false,incidencias:false}
 /* Web del CRM sobre Supabase (crm.veoup.es): la lectura de Drive la hacen triggers en la base de datos */
 const SUPA=!!window.VEOUP_SUPA;
@@ -2045,12 +2051,14 @@ function abrirNuevo(){abierto={id:null,tab:"datos"};pintarFicha({etapa:"Nuevo le
 function abrirFicha(id,tab){const n=S.negocios.find(x=>x.id===id);if(!n)return;abierto={id,tab:tab||"resumen"};cerrarDialogo();pintarFicha(n)}
 function cerrarFicha(){abierto=null;$("#sheet").hidden=true;$("#sheet").replaceChildren();document.body.style.overflow="";document.body.classList.remove("ficha-abierta")}
 const FICHA_TABS=[["resumen","Resumen"],["whatsapp","WhatsApp"],["notas","Notas"],["tareas","Tareas"],["contenido","Contenido"],["datos","Datos"]];
+if(SUPA)FICHA_TABS.splice(5,0,["propuesta","Propuesta"]); /* propuestas con IA: solo en la web (Supabase) */
 const esSistema=a=>!TIPOS_ACT.includes(a.tipo)&&a.tipo!=="Conversación";
 function contadorTab(k,n){
   const c=k==="whatsapp"?S.actividades.filter(a=>a.negocioId===n.id&&a.tipo==="Conversación").length:
     k==="notas"?S.actividades.filter(a=>a.negocioId===n.id&&!esSistema(a)&&a.tipo!=="Conversación").length:
     k==="tareas"?tareasDe(n.id).filter(t=>!t.hecha).length:
-    k==="contenido"?S.piezas.filter(p=>p.negocioId===n.id&&p.mes===mesISO()).length:0;
+    k==="contenido"?S.piezas.filter(p=>p.negocioId===n.id&&p.mes===mesISO()).length:
+    k==="propuesta"?S.propuestas.filter(p=>p.negocioId===n.id&&(p.estado==="pendiente"||p.estado==="procesando")).length:0;
   return c?h("span",{class:"c",text:String(c)}):null;
 }
 function pintarFicha(n){
@@ -2069,7 +2077,7 @@ function pintarFicha(n){
 }
 function pintarTab(n){
   const c=$("#fichaCuerpo");if(!c)return;
-  const fn={resumen:tabResumen,whatsapp:tabWhatsApp,notas:tabNotas,tareas:tabTareas,contenido:tabContenido,datos:tabDatos}[abierto.tab]||tabResumen;
+  const fn={resumen:tabResumen,whatsapp:tabWhatsApp,notas:tabNotas,tareas:tabTareas,contenido:tabContenido,propuesta:tabPropuesta,datos:tabDatos}[abierto.tab]||tabResumen;
   c.replaceChildren(...[fn(n)].flat().filter(Boolean));
   if(abierto.tab==="datos"&&!abierto.id)setTimeout(()=>$("#pegado")?.focus(),30);
 }
@@ -2082,7 +2090,7 @@ async function refrescarFicha(){
   if(abierto.tab==="datos")return; /* no pisar lo que se está escribiendo */
   const sh=$("#sheet");const st=sh.scrollTop;const alFondo=sh.scrollTop+sh.clientHeight>=sh.scrollHeight-40;
   const act=document.activeElement;const actId=act&&act.id;const selS=act&&act.selectionStart,selE=act&&act.selectionEnd;
-  const borr={};for(const id of["chat-texto","t-texto","p-nueva","wa-texto"]){const e=document.getElementById(id);if(e&&e.value)borr[id]=e.value}
+  const borr={};for(const id of["chat-texto","t-texto","p-nueva","wa-texto","pr-contenido","pr-promo","pr-que","pr-nota"]){const e=document.getElementById(id);if(e&&e.value)borr[id]=e.value}
   pintarFicha(n);
   for(const[id,v]of Object.entries(borr)){const e=document.getElementById(id);if(e)e.value=v}
   sh.scrollTop=abierto.tab==="notas"&&alFondo?sh.scrollHeight:st;
@@ -2332,6 +2340,74 @@ function tabContenido(n){
     canWrite?h("form",{class:"addrow",style:"grid-template-columns:minmax(0,1fr) auto auto",onsubmit:async e=>{e.preventDefault();const ahora=new Date().toISOString();
       const ok=await escribir(()=>db.collection("piezas").add({negocioId:n.id,mes,tipo:nuevoTipo.value,titulo:nuevoTit.value.trim()||nuevoTipo.value+" extra",estado:"Idea",orden:ps.length,creado:ahora,actualizado:ahora}),"Pieza añadida");if(ok){const el=$("#p-nueva")||nuevoTit;el.value=""}}},
       nuevoTit,nuevoTipo,h("button",{class:"btn",type:"submit"},"Añadir")):null];
+}
+
+/* ---------- Propuestas con IA (idea de Stevan, 2026-11-19) ----------
+   El equipo pega enlaces de referencia → fila «pendiente» en Supabase. El ordenador de Manu (tarea programada de Claude)
+   la procesa y deja el PDF en propuestas_pdf. Ver propuestas/TAREA_procesar.md. Solo en la web (SUPA). */
+const PROP_EST={pendiente:["En cola","Se genera en el ordenador de Manu en cuanto esté encendido. Puedes cerrar la ficha."],
+  procesando:["Generando…","La IA está mirando los vídeos y escribiendo la propuesta."],lista:["Lista",""],error:["Error",""]};
+const enlacesDe=t=>[...new Set((String(t||"").match(/https?:\/\/[^\s<>"']+/g)||[]).map(u=>u.replace(/[),.;]+$/,"")))];
+const enlaceValido=u=>/^https:\/\/(www\.|m\.|vm\.)?(instagram\.com\/(reel|reels|p|tv)\/|tiktok\.com\/|youtube\.com\/|youtu\.be\/)/i.test(u);
+const fechaHoraProp=iso=>iso?new Date(iso).toLocaleString("es-ES",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"}):"";
+function tabPropuesta(n){
+  const mias=S.propuestas.filter(p=>p.negocioId===n.id).sort((a,b)=>String(b.creado||"").localeCompare(String(a.creado||"")));
+  const cab=h("div",null,h("div",{class:"sec-t",text:"Propuesta de contenido"}),
+    h("div",{class:"note",text:"Pega los enlaces de los vídeos de referencia. La IA mira cada uno, escribe qué es y por qué se lo proponemos, y monta el PDF con nuestro logo y el suyo."}));
+  const ta=(id,ph,lab)=>h("textarea",{id,placeholder:ph,rows:4,"aria-label":lab});
+  const tCont=ta("pr-contenido","Un enlace por línea\nhttps://www.instagram.com/reel/…","Referencias para su contenido");
+  const tProm=ta("pr-promo","https://www.instagram.com/reel/…","Referencias para promocionar");
+  const qProm=h("input",{id:"pr-que",placeholder:"Ej.: Formaciones","aria-label":"Qué se promociona"});
+  const nota=h("input",{id:"pr-nota",placeholder:"Ej.: que salga ella en cámara","aria-label":"Nota para la IA"});
+  const cuenta=h("span",{class:"note",id:"pr-cuenta","aria-live":"polite"});
+  const contar=()=>{const a=enlacesDe(tCont.value),b=enlacesDe(tProm.value),t=a.length+b.length,mal=[...a,...b].filter(u=>!enlaceValido(u)).length;
+    cuenta.textContent=t?t+(t>1?" enlaces":" enlace")+(mal?" · "+mal+" no "+(mal>1?"parecen":"parece")+" de Instagram, TikTok o YouTube":"")+(t>7?" · máximo 7":""):""};
+  tCont.addEventListener("input",contar);tProm.addEventListener("input",contar);
+  const enviar=async e=>{e.preventDefault();
+    const a=enlacesDe(tCont.value),b=enlacesDe(tProm.value),t=a.length+b.length;
+    if(!t){toast("Pega al menos un enlace");tCont.focus();return}
+    if(t>7){toast("Máximo 7 enlaces por propuesta");return}
+    const mal=[...a,...b].find(u=>!enlaceValido(u));if(mal){toast("Revisa este enlace: "+mal.slice(0,60));return}
+    if(b.length&&!qProm.value.trim()){toast("Escribe qué se promociona (p. ej. Formaciones)");qProm.focus();return}
+    const limpia=u=>u.split("?")[0].split("#")[0];const ahora=new Date().toISOString();
+    const refs=[...a.map(u=>({url:limpia(u),bloque:"contenido"})),...b.map(u=>({url:limpia(u),bloque:"promocion"}))];
+    const ok=await escribir(()=>db.collection("propuestas").add({negocioId:n.id,estado:"pendiente",refs,promocion:b.length?qProm.value.trim():null,
+      nota:nota.value.trim()||null,autor:myId||null,autorNombre:yo()||null,creado:ahora,actualizado:ahora}),"Propuesta en cola");
+    if(ok){for(const el of[tCont,tProm,qProm,nota])el.value="";contar();registrar(n.id,"Contenido","Propuesta pedida ("+t+(t>1?" referencias)":" referencia)"))}};
+  const form=canWrite?h("form",{class:"box",style:"gap:12px",onsubmit:enviar},
+    h("div",{class:"field"},h("label",{for:"pr-contenido",text:"Referencias para su contenido"}),tCont),
+    h("div",{class:"field"},h("label",{for:"pr-promo",text:"Referencias para promocionar (opcional)"}),tProm),
+    h("div",{class:"grid2"},h("div",{class:"field"},h("label",{for:"pr-que",text:"Qué se promociona"}),qProm),
+      h("div",{class:"field"},h("label",{for:"pr-nota",text:"Algo que deba saber la IA (opcional)"}),nota)),
+    h("div",{class:"actions"},h("button",{class:"btn dark",type:"submit"},"Generar propuesta"),cuenta)):null;
+  const borrar=p=>dialogo("¿Borrar esta propuesta?",h("p",{class:"note",text:"Se borra la propuesta del "+fechaHoraProp(p.creado)+" y su PDF. No se puede deshacer."}),
+    h("div",{class:"actions"},h("button",{class:"btn dark",type:"button",onclick:async()=>{cerrarDialogo();await escribir(()=>db.doc("propuestas/"+p.id).delete(),"Propuesta borrada")}},"Borrar"),
+      h("button",{class:"btn",type:"button",onclick:cerrarDialogo},"Cancelar")));
+  const fila=p=>{const[et,ex]=PROP_EST[p.estado]||[p.estado||"",""];const nr=(p.refs||[]).length;
+    return h("div",{class:"prop"},
+      h("div",{style:"min-width:0;display:grid;gap:3px"},
+        h("div",{class:"prop-t"},h("span",{class:"prop-e prop-"+(p.estado||"pendiente"),text:et}),h("b",{text:fechaHoraProp(p.creado)})),
+        h("div",{class:"note",text:nr+(nr===1?" referencia":" referencias")+(p.promocion?" · promoción: "+p.promocion:"")+(p.autorNombre?" · pedida por "+p.autorNombre:"")}),
+        p.estado==="error"&&p.error?h("div",{class:"note",style:"color:var(--danger)",text:p.error}):(ex?h("div",{class:"note",text:ex}):null)),
+      h("div",{class:"actions",style:"flex-wrap:nowrap"},
+        p.estado==="lista"?h("button",{class:"btn dark small",type:"button",onclick:e=>descargarPropuesta(p,n,e.currentTarget)},"Descargar PDF"):null,
+        p.estado==="error"&&canWrite?h("button",{class:"btn small",type:"button",onclick:()=>escribir(()=>db.doc("propuestas/"+p.id).update({estado:"pendiente",error:null,actualizado:new Date().toISOString()}),"De nuevo en cola")},"Reintentar"):null,
+        canWrite&&p.estado!=="procesando"?h("button",{class:"x",type:"button","aria-label":"Borrar propuesta",title:"Borrar",onclick:()=>borrar(p)},"×"):null));
+  };
+  return[cab,form,h("section",{class:"sec"},h("div",{class:"label",text:"Propuestas"+(mias.length?" ("+mias.length+")":"")}),
+    mias.length?h("div",{class:"stack"},mias.map(fila)):h("div",{class:"empty",text:"Todavía no hay ninguna propuesta para este negocio."}))];
+}
+async function descargarPropuesta(p,n,btn){
+  if(!window.VEOUP_SB){toast("La descarga solo funciona en crm.veoup.es");return}
+  const t=btn.textContent;btn.disabled=true;btn.textContent="Descargando…";
+  try{const{data,error}=await window.VEOUP_SB.from("propuestas_pdf").select("pdf_b64").eq("propuesta_id",p.id).single();
+    if(error||!data)throw error||new Error("sin PDF");
+    const bin=atob(data.pdf_b64),u8=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u8[i]=bin.charCodeAt(i);
+    const url=URL.createObjectURL(new Blob([u8],{type:"application/pdf"}));
+    const a=h("a",{href:url,download:"Propuesta VEO UP - "+String(n.nombre||"cliente").replace(/[\\/:*?"<>|]/g,"")+".pdf"});document.body.append(a);a.click();a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),60000);
+  }catch(e){toast("No se pudo descargar el PDF. Prueba otra vez en un momento.")}
+  finally{btn.disabled=false;btn.textContent=t}
 }
 
 /* Datos (editar) */

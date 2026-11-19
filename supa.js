@@ -22,6 +22,7 @@ const T={
   reservas:{pk:"event_id",soloLectura:true,cols:"event_id inicio fin nombre apellido email telefono negocio_txt tipo estado actualizado confirmacion_reserva negocio_id procesado"},
   pagos:{pk:"session_id",soloLectura:true,cols:"session_id fecha plan email nombre empresa nif base iva total suscripcion cliente_stripe ref_lead modo google_ads negocio_id estado via procesado"},
   ajustes:{pk:"clave",cols:"clave valor actualizado"},
+  propuestas:{pk:"id",extra:"extra",cols:"id negocio_id estado refs promocion nota resultado error autor autor_nombre creado actualizado extra"},
   stripe_suscripciones:{pk:"sub_id",soloLectura:true,cols:"sub_id cliente_stripe email nombre plan google_ads estado base_mensual proximo_cobro cancela_al_final creada cancelada modo actualizado"},
   stripe_cobros:{pk:"cobro_id",soloLectura:true,cols:"cobro_id fecha cliente_stripe email sub_id motivo base iva total comision neto estado modo factura"}
 };
@@ -135,7 +136,7 @@ window.claude={use:async n=>{await promesaListo;return n==="db"?db:n==="user"?us
 /* Tras borrar una ficha por RPC: se quita ya de la caché (Realtime lo confirmará después) */
 window.VEOUP_QUITAR=neg=>{
   if(CACHE.negocios&&CACHE.negocios.delete(neg))emitirPronto("negocios");
-  for(const t of["actividades","tareas","piezas","correos","pagos","reservas","formularios","eventos"]){const m=CACHE[t];if(!m)continue;let c=false;
+  for(const t of["actividades","tareas","piezas","correos","pagos","reservas","formularios","eventos","propuestas"]){const m=CACHE[t];if(!m)continue;let c=false;
     for(const[k,f]of m)if(f.negocio_id===neg){m.delete(k);c=true}if(c)emitirPronto(t)}
 };
 /* RPC que usa la página (pagos por confirmar) */
