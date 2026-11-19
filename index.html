@@ -365,12 +365,12 @@ ol.how{margin:0;padding-left:20px;display:grid;gap:4px;font-size:13px}
 .pe-Aprobado{background:var(--info-bg)!important;color:var(--info)}
 .pe-Grabado{background:var(--warn-bg)!important;color:var(--warn)}
 .pe-Editado{background:var(--soft)!important}
-.prop{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--surface);border:1px solid var(--line);border-radius:12px;min-width:0}
+.pfila{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--surface);border:1px solid var(--line);border-radius:12px;min-width:0}
 .prop-t{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .prop-e{font-size:12px;font-weight:600;padding:2px 9px;border-radius:999px;background:var(--soft);color:var(--fg)}
 .prop-pendiente{background:var(--info-bg);color:var(--info)}.prop-procesando{background:var(--warn-bg);color:var(--warn)}
 .prop-lista{background:var(--accent-bg);color:var(--accent-ink)}.prop-error{background:var(--danger-bg);color:var(--danger)}
-@media (max-width:520px){.prop{flex-direction:column;align-items:stretch}.prop .actions{justify-content:flex-start}}
+@media (max-width:520px){.pfila{flex-direction:column;align-items:stretch}.pfila .actions{justify-content:flex-start}}
 .pe-Entregado{background:var(--fg)!important;color:var(--bg)!important;border-color:var(--fg)!important}
 .pbar{height:8px;border-radius:4px;background:var(--soft);overflow:hidden}
 .pbar i{display:block;height:100%;background:var(--fg);border-radius:4px}
@@ -2384,7 +2384,7 @@ function tabPropuesta(n){
     h("div",{class:"actions"},h("button",{class:"btn dark",type:"button",onclick:async()=>{cerrarDialogo();await escribir(()=>db.doc("propuestas/"+p.id).delete(),"Propuesta borrada")}},"Borrar"),
       h("button",{class:"btn",type:"button",onclick:cerrarDialogo},"Cancelar")));
   const fila=p=>{const[et,ex]=PROP_EST[p.estado]||[p.estado||"",""];const nr=(p.refs||[]).length;
-    return h("div",{class:"prop"},
+    return h("div",{class:"pfila"},
       h("div",{style:"min-width:0;display:grid;gap:3px"},
         h("div",{class:"prop-t"},h("span",{class:"prop-e prop-"+(p.estado||"pendiente"),text:et}),h("b",{text:fechaHoraProp(p.creado)})),
         h("div",{class:"note",text:nr+(nr===1?" referencia":" referencias")+(p.promocion?" · promoción: "+p.promocion:"")+(p.autorNombre?" · pedida por "+p.autorNombre:"")}),
