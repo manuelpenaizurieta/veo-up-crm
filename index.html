@@ -993,7 +993,7 @@ table.dt tfoot td{font-weight:700;border-top:1px solid var(--line);border-bottom
 .kmeta>span:first-child{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .kmeta>span:last-child{flex:none}
 </style>
-<script>window.VEOUP_BUILD="4bac235c0d2a";</script>
+<script>window.VEOUP_BUILD="c7c46e73ac9b";</script>
 <script src="config.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="supa.js?v=58ab0a5a95"></script>
@@ -2456,7 +2456,7 @@ function tabPropuesta(n){
   abierto.pcAbiertos=abierto.pcAbiertos||{};
   const repintar=()=>pintarTab(S.negocios.find(x=>x.id===n.id)||n);
   const cab=h("div",{class:"rowx"},h("div",null,h("div",{class:"sec-t",text:"Propuesta de contenido"}),
-      h("div",{class:"note",text:"Pega los enlaces de referencia y la IA monta el PDF. Después, pídele en el chat los cambios que quieras: cada mensaje genera una versión nueva."})),
+      h("div",{class:"note",text:"Pega los enlaces de referencia y la IA monta el PDF. Después, pídele en el chat los cambios que quieras: cada cambio genera una versión nueva (si solo preguntas algo, te contesta sin tocarla)."})),
     orden.length&&canWrite&&!abierto.pcNueva?h("button",{class:"btn small",type:"button",onclick:()=>{abierto.pcNueva=true;repintar()}},"Nueva propuesta"):null);
   const estadoPC=pcEstadoPC();
 
@@ -2498,7 +2498,12 @@ function tabPropuesta(n){
   }
 
   /* --- Hilos --- */
-  const burbujaIA=p=>{
+  const burbujaIA=(p,vs)=>{
+    /* El mensaje no pedía cambios: la IA contesta sin PDF y sigue valiendo la versión base (parche 13) */
+    if(p.estado==="respondida"){const b=(vs||[]).find(x=>x.id===p.baseId);
+      return h("div",{class:"pc-msg pc-ia"},h("div",{class:"pc-txt",text:p.respuesta||"Recibido."}),
+        h("div",{class:"pc-pie"},b?h("button",{class:"btn small",type:"button",onclick:e=>descargarPropuesta(b,n,e.currentTarget)},"Sin cambios · PDF v"+(b.version||1)):null,
+          h("span",{class:"pc-hora",text:fechaHoraProp(p.actualizado)})))}
     const dl=p.estado==="lista"?h("button",{class:"btn dark small",type:"button",onclick:e=>descargarPropuesta(p,n,e.currentTarget)},"Descargar PDF · v"+(p.version||1)):null;
     if(p.estado==="lista")return h("div",{class:"pc-msg pc-ia"},h("div",{class:"pc-txt",text:p.respuesta||("Aquí tienes la versión "+(p.version||1)+".")}),
       h("div",{class:"pc-pie"},dl,h("span",{class:"pc-hora",text:fechaHoraProp(p.actualizado)})));
@@ -2526,7 +2531,8 @@ function tabPropuesta(n){
     const abiertoH=abierto.pcAbiertos[hid]!=null?abierto.pcAbiertos[hid]:i===0;
     const baseOk=[...vs].reverse().find(v=>v.estado==="lista");
     const ocupado=vs.some(v=>v.estado==="pendiente"||v.estado==="procesando"||v.estado==="borrador");
-    const est=ult.estado==="lista"?"Lista":ult.estado==="error"?"Error":"Generando";
+    const conPDF=vs.filter(v=>v.estado!=="respondida");
+    const est=ult.estado==="lista"||ult.estado==="respondida"?"Lista":ult.estado==="error"?"Error":"Generando";
     let composer=null;
     if(canWrite){
       const clave="hilo-"+hid,tid="pr-msg-"+hid;
@@ -2534,7 +2540,7 @@ function tabPropuesta(n){
       const t=h("textarea",{id:tid,rows:2,placeholder:ocupado?"Espera a que termine la versión "+(ult.version||1)+"…":baseOk?"Pide un cambio: «la 3 más corta», «cambia la 2 por https://…», «tono más cercano»…":"Cuando salga la primera versión podrás pedir cambios aquí",
         disabled:ocupado||!baseOk,"aria-label":"Mensaje para la IA",onkeydown:e=>{if(e.key==="Enter"&&(e.ctrlKey||e.metaKey)){e.preventDefault();mandar()}}});
       const mandar=async()=>{const c=t.value.trim();if(c.length<3&&!adj.lista.length){toast("Escribe qué quieres cambiar");t.focus();return}
-        const v=Math.max(...vs.map(x=>Number(x.version)||1))+1;
+        const v=Math.max(...conPDF.map(x=>Number(x.version)||1))+1;   /* las respondidas sin cambios no cuentan */
         const id=await pcCrearVersion({negocioId:n.id,hiloId:hid,version:v,baseId:baseOk.id,cambios:c||"(Mira las imágenes adjuntas)",refs:baseOk.refs||[],promocion:baseOk.promocion||null,nota:baseOk.nota||null},adj.lista);
         if(id){t.value="";PC_ADJ[clave]=[];registrar(n.id,"Contenido","Cambios pedidos en la propuesta (versión "+v+")");repintar()}};
       composer=h("div",{class:"pc-composer"},adj.chips,adj.input,
@@ -2545,10 +2551,10 @@ function tabPropuesta(n){
       h("div",{class:"actions"},h("button",{class:"btn dark",type:"button",onclick:async()=>{cerrarDialogo();await escribir(async()=>{for(const v of [...vs].reverse())await db.doc("propuestas/"+v.id).delete()},"Propuesta borrada")}},"Borrar"),
         h("button",{class:"btn",type:"button",onclick:cerrarDialogo},"Cancelar")));
     const d=h("details",{class:"pc-hilo",open:abiertoH,ontoggle:e=>{abierto.pcAbiertos[hid]=e.target.open}},
-      h("summary",null,h("span",{class:"pc-est pc-"+(ult.estado==="lista"?"lista":ult.estado==="error"?"error":"curso"),text:est}),
-        h("b",{text:"Propuesta del "+fechaHoraProp(raiz.creado)}),h("span",{class:"note",text:(raiz.refs||[]).length+((raiz.refs||[]).length===1?" referencia · ":" referencias · ")+vs.length+(vs.length>1?" versiones":" versión")}),
+      h("summary",null,h("span",{class:"pc-est pc-"+(est==="Lista"?"lista":est==="Error"?"error":"curso"),text:est}),
+        h("b",{text:"Propuesta del "+fechaHoraProp(raiz.creado)}),h("span",{class:"note",text:(raiz.refs||[]).length+((raiz.refs||[]).length===1?" referencia · ":" referencias · ")+conPDF.length+(conPDF.length>1?" versiones":" versión")}),
         canWrite&&!ocupado?h("button",{class:"x",type:"button","aria-label":"Borrar propuesta",title:"Borrar propuesta",onclick:e=>{e.preventDefault();borrar()}},"×"):null),
-      h("div",{class:"pc-msgs"},vs.flatMap(v=>[burbujaYo(v),burbujaIA(v)])),composer);
+      h("div",{class:"pc-msgs"},vs.flatMap(v=>[burbujaYo(v),burbujaIA(v,vs)])),composer);
     return d;
   };
   return[cab,estadoPC,form,orden.length?h("div",{class:"stack"},orden.map(hiloHTML)):(form?null:h("div",{class:"empty",text:"Todavía no hay ninguna propuesta para este negocio."}))];
