@@ -368,6 +368,10 @@ ol.how{margin:0;padding-left:20px;display:grid;gap:4px;font-size:13px}
 .aviso-version{position:fixed;left:50%;transform:translateX(-50%);top:calc(68px + env(safe-area-inset-top));z-index:9000;display:flex;gap:10px;align-items:center;background:var(--fg);color:var(--bg);padding:8px 8px 8px 16px;border-radius:999px;box-shadow:0 12px 32px rgba(0,0,0,.28);font-size:14px;font-weight:500;max-width:calc(100% - 32px);width:max-content}
 .aviso-version .btn{background:var(--accent);color:var(--on-accent);border-color:var(--accent);font-weight:600}
 .aviso-version .x{color:inherit;opacity:.75}
+.pc-pc{display:flex;gap:8px;align-items:center;font-size:13px;color:var(--muted);padding:8px 12px;border-radius:12px;background:var(--surface);border:1px solid var(--line)}
+.pc-pc i{width:8px;height:8px;border-radius:50%;flex:none;background:var(--muted)}
+.pc-pc.on i{background:var(--accent);box-shadow:0 0 0 3px var(--accent-bg)}
+.pc-pc.off{color:var(--warn);background:var(--warn-bg);border-color:transparent}.pc-pc.off i{background:var(--warn)}
 /* Propuestas: chat por propuesta (clases pc-*, para no chocar con .prop de las filas de datos) */
 .pc-hilo{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);min-width:0;overflow:hidden}
 .pc-hilo>summary{list-style:none;display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:12px 14px;cursor:pointer}
@@ -989,7 +993,7 @@ table.dt tfoot td{font-weight:700;border-top:1px solid var(--line);border-bottom
 .kmeta>span:first-child{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .kmeta>span:last-child{flex:none}
 </style>
-<script>window.VEOUP_BUILD="3f7fa7f6d57d";</script>
+<script>window.VEOUP_BUILD="4bac235c0d2a";</script>
 <script src="config.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="supa.js?v=58ab0a5a95"></script>
@@ -2423,7 +2427,28 @@ async function pcCrearVersion(datos,adj){
   },adj.length?"Enviado con "+adj.length+(adj.length>1?" imágenes":" imagen"):"Enviado");
   return ok?id:null;
 }
+/* ¿Está en marcha el ordenador de Manu? (Manu, 2026-11-19). El vigilante deja la hora en ajustes «latido_propuestas»
+   cada minuto (también mientras Claude trabaja). Más de 3 min sin señal = apagado. Se mira al abrir la pestaña y cada 30 s. */
+const PC_LATIDO={at:null,mirado:0,sabido:false};
+const pcEnMarcha=()=>!!PC_LATIDO.at&&Date.now()-new Date(PC_LATIDO.at).getTime()<3*60e3;
+const pcDesde=iso=>{const d=new Date(iso),hoy=new Date().toDateString()===d.toDateString(),hm=d.toLocaleTimeString("es-ES",{hour:"2-digit",minute:"2-digit"});
+  return hoy?"las "+hm:"el "+d.toLocaleDateString("es-ES",{day:"numeric",month:"short"})+" a las "+hm};
+async function pcMirarLatido(){
+  if(!window.VEOUP_SB||Date.now()-PC_LATIDO.mirado<25000)return;PC_LATIDO.mirado=Date.now();
+  try{const{data}=await window.VEOUP_SB.from("ajustes").select("clave,valor,actualizado").eq("clave","latido_propuestas");
+    const f=(data||[]).find(x=>x.clave==="latido_propuestas");const antes=PC_LATIDO.sabido+"|"+pcEnMarcha();
+    PC_LATIDO.at=f?((f.valor&&f.valor.at)||f.actualizado):null;PC_LATIDO.sabido=true;
+    if(antes!==PC_LATIDO.sabido+"|"+pcEnMarcha()&&abierto&&abierto.tab==="propuesta")refrescarFicha();
+  }catch(e){}}
+if(SUPA)setInterval(()=>{if(abierto&&abierto.tab==="propuesta"&&document.visibilityState==="visible")pcMirarLatido()},30000);
+function pcEstadoPC(){
+  if(!PC_LATIDO.sabido)return null;const on=pcEnMarcha();
+  return h("div",{class:"pc-pc "+(on?"on":"off"),role:"status"},h("i",{"aria-hidden":"true"}),
+    h("span",{text:on?"El ordenador de Manu está en marcha: responde en 2–4 min.":
+      "El ordenador de Manu está apagado"+(PC_LATIDO.at?" desde "+pcDesde(PC_LATIDO.at):"")+". Lo que pidas se generará en cuanto lo encienda."}));
+}
 function tabPropuesta(n){
+  pcMirarLatido();
   const mias=S.propuestas.filter(p=>p.negocioId===n.id);
   const hilos={};for(const p of mias)(hilos[p.hiloId||p.id]||(hilos[p.hiloId||p.id]=[])).push(p);
   const orden=Object.values(hilos).map(vs=>vs.sort((a,b)=>(a.version||1)-(b.version||1)))
@@ -2433,6 +2458,7 @@ function tabPropuesta(n){
   const cab=h("div",{class:"rowx"},h("div",null,h("div",{class:"sec-t",text:"Propuesta de contenido"}),
       h("div",{class:"note",text:"Pega los enlaces de referencia y la IA monta el PDF. Después, pídele en el chat los cambios que quieras: cada mensaje genera una versión nueva."})),
     orden.length&&canWrite&&!abierto.pcNueva?h("button",{class:"btn small",type:"button",onclick:()=>{abierto.pcNueva=true;repintar()}},"Nueva propuesta"):null);
+  const estadoPC=pcEstadoPC();
 
   /* --- Nueva propuesta (primer mensaje del hilo) --- */
   let form=null;
@@ -2478,7 +2504,9 @@ function tabPropuesta(n){
       h("div",{class:"pc-pie"},dl,h("span",{class:"pc-hora",text:fechaHoraProp(p.actualizado)})));
     if(p.estado==="error")return h("div",{class:"pc-msg pc-ia pc-err"},h("div",{class:"pc-txt",text:p.error||"No he podido generar esta versión."}),
       canWrite?h("div",{class:"pc-pie"},h("button",{class:"btn small",type:"button",onclick:()=>escribir(()=>db.doc("propuestas/"+p.id).update({estado:"pendiente",error:null,actualizado:new Date().toISOString()}),"De nuevo en cola")},"Reintentar")):null);
-    const txt=p.estado==="borrador"?"Subiendo imágenes…":p.estado==="procesando"?"Mirando los vídeos y preparando la versión "+(p.version||1)+"…":"Recibido. Empiezo en cuanto el ordenador de Manu esté encendido (suele tardar 2–4 min).";
+    const txt=p.estado==="borrador"?"Subiendo imágenes…":p.estado==="procesando"?"Mirando los vídeos y preparando la versión "+(p.version||1)+"…":
+      !PC_LATIDO.sabido?"Recibido. Empiezo en cuanto el ordenador de Manu esté encendido (suele tardar 2–4 min).":
+      pcEnMarcha()?"Recibido. Empiezo en un momento (suele tardar 2–4 min).":"Recibido. El ordenador de Manu está apagado: lo preparo en cuanto lo encienda.";
     return h("div",{class:"pc-msg pc-ia pc-espera"},h("span",{class:"pc-puntos","aria-hidden":"true"},h("i"),h("i"),h("i")),h("div",{class:"pc-txt",text:txt}));
   };
   const burbujaYo=p=>{
@@ -2518,12 +2546,12 @@ function tabPropuesta(n){
         h("button",{class:"btn",type:"button",onclick:cerrarDialogo},"Cancelar")));
     const d=h("details",{class:"pc-hilo",open:abiertoH,ontoggle:e=>{abierto.pcAbiertos[hid]=e.target.open}},
       h("summary",null,h("span",{class:"pc-est pc-"+(ult.estado==="lista"?"lista":ult.estado==="error"?"error":"curso"),text:est}),
-        h("b",{text:"Propuesta del "+fechaHoraProp(raiz.creado)}),h("span",{class:"note",text:(raiz.refs||[]).length+" referencias · "+vs.length+(vs.length>1?" versiones":" versión")}),
+        h("b",{text:"Propuesta del "+fechaHoraProp(raiz.creado)}),h("span",{class:"note",text:(raiz.refs||[]).length+((raiz.refs||[]).length===1?" referencia · ":" referencias · ")+vs.length+(vs.length>1?" versiones":" versión")}),
         canWrite&&!ocupado?h("button",{class:"x",type:"button","aria-label":"Borrar propuesta",title:"Borrar propuesta",onclick:e=>{e.preventDefault();borrar()}},"×"):null),
       h("div",{class:"pc-msgs"},vs.flatMap(v=>[burbujaYo(v),burbujaIA(v)])),composer);
     return d;
   };
-  return[cab,form,orden.length?h("div",{class:"stack"},orden.map(hiloHTML)):(form?null:h("div",{class:"empty",text:"Todavía no hay ninguna propuesta para este negocio."}))];
+  return[cab,estadoPC,form,orden.length?h("div",{class:"stack"},orden.map(hiloHTML)):(form?null:h("div",{class:"empty",text:"Todavía no hay ninguna propuesta para este negocio."}))];
 }
 async function descargarPropuesta(p,n,btn){
   if(!window.VEOUP_SB){toast("La descarga solo funciona en crm.veoup.es");return}
