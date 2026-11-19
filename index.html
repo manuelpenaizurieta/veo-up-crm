@@ -365,6 +365,9 @@ ol.how{margin:0;padding-left:20px;display:grid;gap:4px;font-size:13px}
 .pe-Aprobado{background:var(--info-bg)!important;color:var(--info)}
 .pe-Grabado{background:var(--warn-bg)!important;color:var(--warn)}
 .pe-Editado{background:var(--soft)!important}
+.aviso-version{position:fixed;left:50%;transform:translateX(-50%);top:calc(68px + env(safe-area-inset-top));z-index:9000;display:flex;gap:10px;align-items:center;background:var(--fg);color:var(--bg);padding:8px 8px 8px 16px;border-radius:999px;box-shadow:0 12px 32px rgba(0,0,0,.28);font-size:14px;font-weight:500;max-width:calc(100% - 32px);width:max-content}
+.aviso-version .btn{background:var(--accent);color:var(--on-accent);border-color:var(--accent);font-weight:600}
+.aviso-version .x{color:inherit;opacity:.75}
 /* Propuestas: chat por propuesta (clases pc-*, para no chocar con .prop de las filas de datos) */
 .pc-hilo{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);min-width:0;overflow:hidden}
 .pc-hilo>summary{list-style:none;display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:12px 14px;cursor:pointer}
@@ -986,6 +989,7 @@ table.dt tfoot td{font-weight:700;border-top:1px solid var(--line);border-bottom
 .kmeta>span:first-child{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .kmeta>span:last-child{flex:none}
 </style>
+<script>window.VEOUP_BUILD="3f7fa7f6d57d";</script>
 <script src="config.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="supa.js?v=58ab0a5a95"></script>
@@ -3945,6 +3949,22 @@ document.addEventListener("keydown",e=>{
 });
 /* Panel lateral de la ficha: clic fuera para cerrar (escritorio) */
 document.addEventListener("click",e=>{if(abierto&&e.target===document.body&&window.innerWidth>=1000)cerrarFicha()});
+
+/* ---------- Aviso de versión nueva (Manu, 2026-11-19) ----------
+   El navegador puede quedarse unos minutos con un CRM viejo tras publicar. Cada 2 min (y al volver a la pestaña) se compara
+   window.VEOUP_BUILD con version.json; si cambia, se ofrece recargar. Nunca recarga solo: se podría perder lo que se está escribiendo. */
+if(SUPA&&window.VEOUP_BUILD){
+  let avisoVersion=null;
+  const mirarVersion=async()=>{if(avisoVersion||document.visibilityState!=="visible")return;
+    try{const r=await fetch("version.json?nc="+Date.now(),{cache:"no-store"});if(!r.ok)return;const j=await r.json();
+      if(!j.v||j.v===window.VEOUP_BUILD||avisoVersion)return;
+      avisoVersion=h("div",{class:"aviso-version",role:"status"},h("span",{text:"Hay una versión nueva del CRM."}),
+        h("button",{class:"btn small",type:"button",onclick:()=>location.reload()},"Recargar"),
+        h("button",{class:"x",type:"button","aria-label":"Ahora no",title:"Ahora no",onclick:()=>{avisoVersion.remove();setTimeout(()=>{avisoVersion=null},600000)}},"×"));
+      document.body.append(avisoVersion);
+    }catch(e){}};
+  setInterval(mirarVersion,120000);document.addEventListener("visibilitychange",mirarVersion);setTimeout(mirarVersion,20000);
+}
 
 /* ---------- Arranque ---------- */
 $("#btnNuevo").addEventListener("click",abrirNuevo);
