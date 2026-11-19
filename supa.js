@@ -22,7 +22,7 @@ const T={
   reservas:{pk:"event_id",soloLectura:true,cols:"event_id inicio fin nombre apellido email telefono negocio_txt tipo estado actualizado confirmacion_reserva negocio_id procesado"},
   pagos:{pk:"session_id",soloLectura:true,cols:"session_id fecha plan email nombre empresa nif base iva total suscripcion cliente_stripe ref_lead modo google_ads negocio_id estado via procesado"},
   ajustes:{pk:"clave",cols:"clave valor actualizado"},
-  propuestas:{pk:"id",extra:"extra",cols:"id negocio_id estado refs promocion nota resultado error autor autor_nombre creado actualizado extra"},
+  propuestas:{pk:"id",extra:"extra",cols:"id negocio_id hilo_id estado version base_id cambios respuesta refs promocion nota resultado error autor autor_nombre creado actualizado extra"},
   stripe_suscripciones:{pk:"sub_id",soloLectura:true,cols:"sub_id cliente_stripe email nombre plan google_ads estado base_mensual proximo_cobro cancela_al_final creada cancelada modo actualizado"},
   stripe_cobros:{pk:"cobro_id",soloLectura:true,cols:"cobro_id fecha cliente_stripe email sub_id motivo base iva total comision neto estado modo factura"}
 };

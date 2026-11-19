@@ -365,12 +365,41 @@ ol.how{margin:0;padding-left:20px;display:grid;gap:4px;font-size:13px}
 .pe-Aprobado{background:var(--info-bg)!important;color:var(--info)}
 .pe-Grabado{background:var(--warn-bg)!important;color:var(--warn)}
 .pe-Editado{background:var(--soft)!important}
-.pfila{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--surface);border:1px solid var(--line);border-radius:12px;min-width:0}
-.prop-t{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-.prop-e{font-size:12px;font-weight:600;padding:2px 9px;border-radius:999px;background:var(--soft);color:var(--fg)}
-.prop-pendiente{background:var(--info-bg);color:var(--info)}.prop-procesando{background:var(--warn-bg);color:var(--warn)}
-.prop-lista{background:var(--accent-bg);color:var(--accent-ink)}.prop-error{background:var(--danger-bg);color:var(--danger)}
-@media (max-width:520px){.pfila{flex-direction:column;align-items:stretch}.pfila .actions{justify-content:flex-start}}
+/* Propuestas: chat por propuesta (clases pc-*, para no chocar con .prop de las filas de datos) */
+.pc-hilo{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);min-width:0;overflow:hidden}
+.pc-hilo>summary{list-style:none;display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:12px 14px;cursor:pointer}
+.pc-hilo>summary::-webkit-details-marker{display:none}
+.pc-hilo>summary .x{margin-left:auto}
+.pc-hilo[open]>summary{border-bottom:1px solid var(--line)}
+.pc-est{font-size:12px;font-weight:600;padding:2px 9px;border-radius:999px}
+.pc-lista{background:var(--accent-bg);color:var(--accent-ink)}.pc-error{background:var(--danger-bg);color:var(--danger)}.pc-curso{background:var(--warn-bg);color:var(--warn)}
+.pc-msgs{display:grid;gap:10px;padding:14px;background:var(--bg)}
+.pc-msg{max-width:min(600px,90%);padding:10px 13px;border-radius:16px;font-size:14px;line-height:1.45;min-width:0;display:grid;gap:6px}
+.pc-txt{white-space:pre-wrap;overflow-wrap:anywhere}
+.pc-yo{justify-self:end;background:var(--fg);color:var(--bg);border-bottom-right-radius:5px}
+.pc-yo a{color:inherit}
+.pc-ia{justify-self:start;background:var(--surface);border:1px solid var(--line);border-bottom-left-radius:5px}
+.pc-err{border-color:var(--danger);background:var(--danger-bg);color:var(--danger)}
+.pc-espera{display:flex;gap:10px;align-items:center;color:var(--muted)}
+.pc-pie{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.pc-hora{font-size:11.5px;opacity:.7}
+.pc-refs{margin:6px 0 0;padding-left:18px;display:grid;gap:3px;font-size:13px}
+.pc-refs li{overflow-wrap:anywhere}
+.pc-blq{display:inline-block;margin-left:6px;font-size:11px;font-weight:600;padding:0 7px;border-radius:999px;background:var(--accent);color:var(--on-accent)}
+.pc-puntos{display:inline-flex;gap:4px;flex:none}
+.pc-puntos i{width:6px;height:6px;border-radius:50%;background:currentColor;opacity:.35;animation:pcp 1.2s infinite ease-in-out}
+.pc-puntos i:nth-child(2){animation-delay:.15s}.pc-puntos i:nth-child(3){animation-delay:.3s}
+@keyframes pcp{0%,80%,100%{opacity:.25;transform:translateY(0)}40%{opacity:.9;transform:translateY(-3px)}}
+@media (prefers-reduced-motion:reduce){.pc-puntos i{animation:none;opacity:.6}}
+.pc-composer{display:grid;gap:8px;padding:10px 12px 12px;border-top:1px solid var(--line);background:var(--surface)}
+.pc-fila{display:flex;gap:8px;align-items:flex-end}
+.pc-fila textarea{flex:1;min-width:0;min-height:44px;max-height:180px;resize:vertical;border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--bg);color:var(--fg);font:inherit;font-size:14px}
+.pc-fila textarea:disabled{opacity:.6}
+.pc-clip,.pc-enviar{min-width:44px;min-height:44px;padding:0;display:inline-grid;place-items:center;border-radius:12px;flex:none}
+.pc-chips{display:flex;gap:8px;flex-wrap:wrap}
+.pc-chip{position:relative;width:56px;height:56px;border-radius:10px;overflow:hidden;border:1px solid var(--line);background:var(--soft)}
+.pc-chip img{width:100%;height:100%;object-fit:cover;display:block}
+.pc-chip button{position:absolute;top:2px;right:2px;width:20px;height:20px;border-radius:50%;border:0;background:rgba(16,16,16,.75);color:#fff;font-size:13px;line-height:1;cursor:pointer}
 .pe-Entregado{background:var(--fg)!important;color:var(--bg)!important;border-color:var(--fg)!important}
 .pbar{height:8px;border-radius:4px;background:var(--soft);overflow:hidden}
 .pbar i{display:block;height:100%;background:var(--fg);border-radius:4px}
@@ -959,7 +988,7 @@ table.dt tfoot td{font-weight:700;border-top:1px solid var(--line);border-bottom
 </style>
 <script src="config.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
-<script src="supa.js?v=d1bf989b25"></script>
+<script src="supa.js?v=58ab0a5a95"></script>
 </head>
 <body>
 <header class="shell">
@@ -2090,7 +2119,7 @@ async function refrescarFicha(){
   if(abierto.tab==="datos")return; /* no pisar lo que se está escribiendo */
   const sh=$("#sheet");const st=sh.scrollTop;const alFondo=sh.scrollTop+sh.clientHeight>=sh.scrollHeight-40;
   const act=document.activeElement;const actId=act&&act.id;const selS=act&&act.selectionStart,selE=act&&act.selectionEnd;
-  const borr={};for(const id of["chat-texto","t-texto","p-nueva","wa-texto","pr-contenido","pr-promo","pr-que","pr-nota"]){const e=document.getElementById(id);if(e&&e.value)borr[id]=e.value}
+  const borr={};for(const id of["chat-texto","t-texto","p-nueva","wa-texto",...[...document.querySelectorAll('[id^="pr-"]')].map(e=>e.id)]){const e=document.getElementById(id);if(e&&e.value)borr[id]=e.value}
   pintarFicha(n);
   for(const[id,v]of Object.entries(borr)){const e=document.getElementById(id);if(e)e.value=v}
   sh.scrollTop=abierto.tab==="notas"&&alFondo?sh.scrollHeight:st;
@@ -2342,60 +2371,155 @@ function tabContenido(n){
       nuevoTit,nuevoTipo,h("button",{class:"btn",type:"submit"},"Añadir")):null];
 }
 
-/* ---------- Propuestas con IA (idea de Stevan, 2026-11-19) ----------
-   El equipo pega enlaces de referencia → fila «pendiente» en Supabase. El ordenador de Manu (tarea programada de Claude)
-   la procesa y deja el PDF en propuestas_pdf. Ver propuestas/TAREA_procesar.md. Solo en la web (SUPA). */
-const PROP_EST={pendiente:["En cola","Se genera en el ordenador de Manu en cuanto esté encendido. Puedes cerrar la ficha."],
-  procesando:["Generando…","La IA está mirando los vídeos y escribiendo la propuesta."],lista:["Lista",""],error:["Error",""]};
+/* ---------- Propuestas con IA: chat por propuesta (idea de Stevan; chat pedido por Manu, 2026-11-19) ----------
+   Cada propuesta es un HILO. El primer mensaje son los enlaces (v1); cada mensaje del equipo después genera una versión nueva
+   (v2, v3…) sobre la última que salió bien, sin límite y sin borrar las anteriores. La IA contesta en «respuesta» con su PDF.
+   Lo procesa el ordenador de Manu (vigilante de 1 min + Claude con Chrome). Ver propuestas/TAREA_procesar.md. Solo en la web (SUPA).
+   Las imágenes adjuntas se comprimen aquí a JPEG y se suben a propuestas_adjuntos; mientras, la versión está en «borrador». */
+const PC_MAX_REFS=7,PC_MAX_ADJ=6,PC_LADO=1600;
+const PC_ADJ={};                       /* imágenes elegidas y aún sin enviar, por caja de texto (sobreviven a los repintados) */
 const enlacesDe=t=>[...new Set((String(t||"").match(/https?:\/\/[^\s<>"']+/g)||[]).map(u=>u.replace(/[),.;]+$/,"")))];
 const enlaceValido=u=>/^https:\/\/(www\.|m\.|vm\.)?(instagram\.com\/(reel|reels|p|tv)\/|tiktok\.com\/|youtube\.com\/|youtu\.be\/)/i.test(u);
 const fechaHoraProp=iso=>iso?new Date(iso).toLocaleString("es-ES",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"}):"";
+const ICON_CLIP='<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.4 11.1 12.2 20.3a6 6 0 0 1-8.5-8.5l9.2-9.2a4 4 0 0 1 5.7 5.7l-9.2 9.2a2 2 0 0 1-2.8-2.8l8.5-8.5"/></svg>';
+const ICON_SEND='<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M12 5l7 7-7 7"/></svg>';
+
+/* Imagen → JPEG de como mucho 1600 px de lado (pesa poco y la IA la ve bien) */
+function pcComprimir(file){return new Promise((ok,ko)=>{
+  if(!/^image\//.test(file.type)){ko(new Error("No es una imagen"));return}
+  const url=URL.createObjectURL(file),img=new Image();
+  img.onload=()=>{const k=Math.min(1,PC_LADO/Math.max(img.width,img.height)),c=document.createElement("canvas");
+    c.width=Math.round(img.width*k);c.height=Math.round(img.height*k);const g=c.getContext("2d");g.fillStyle="#fff";g.fillRect(0,0,c.width,c.height);g.drawImage(img,0,0,c.width,c.height);
+    URL.revokeObjectURL(url);const d=c.toDataURL("image/jpeg",.85);ok({nombre:file.name||"imagen.jpg",tipo:"image/jpeg",b64:d.split(",")[1],url:d,bytes:Math.round(d.length*.75)})};
+  img.onerror=()=>{URL.revokeObjectURL(url);ko(new Error("No se pudo leer la imagen"))};img.src=url})}
+/* Botón de adjuntar + miniaturas, para una caja (clave) */
+function pcAdjuntos(clave,repintar){
+  const lista=PC_ADJ[clave]||(PC_ADJ[clave]=[]);
+  const input=h("input",{type:"file",accept:"image/*",multiple:true,hidden:true,onchange:async e=>{
+    const fs=[...e.target.files];e.target.value="";
+    for(const f of fs){if(lista.length>=PC_MAX_ADJ){toast("Máximo "+PC_MAX_ADJ+" imágenes por mensaje");break}
+      try{lista.push(await pcComprimir(f))}catch(x){toast(x.message)}}
+    repintar()}});
+  const boton=h("button",{class:"btn small pc-clip",type:"button","aria-label":"Adjuntar imágenes",title:"Adjuntar imágenes",html:ICON_CLIP,onclick:()=>input.click()});
+  const chips=lista.length?h("div",{class:"pc-chips"},lista.map((a,i)=>h("div",{class:"pc-chip"},h("img",{src:a.url,alt:a.nombre}),
+    h("button",{type:"button","aria-label":"Quitar "+a.nombre,title:"Quitar",onclick:()=>{lista.splice(i,1);repintar()}},"×")))):null;
+  return{input,boton,chips,lista};
+}
+/* Crea una versión: borrador → sube imágenes → pendiente (así la tarea no la coge a medias) */
+async function pcCrearVersion(datos,adj){
+  const ahora=new Date().toISOString();
+  const fila={...datos,estado:adj.length?"borrador":"pendiente",adjuntosN:adj.length,autor:myId||null,autorNombre:yo()||null,creado:ahora,actualizado:ahora};
+  let id=null;
+  const ok=await escribir(async()=>{const r=await db.collection("propuestas").add(fila);id=r.id;
+    if(!fila.hiloId)await db.doc("propuestas/"+id).update({hiloId:id});
+    if(adj.length){
+      const{error}=await window.VEOUP_SB.from("propuestas_adjuntos").insert(adj.map(a=>({propuesta_id:id,nombre:a.nombre,tipo:a.tipo,b64:a.b64,bytes:a.bytes})));
+      if(error){await db.doc("propuestas/"+id).update({estado:"error",error:"No se pudieron subir las imágenes. Pulsa Reintentar o envía el mensaje otra vez.",actualizado:new Date().toISOString()});throw error}
+      await db.doc("propuestas/"+id).update({estado:"pendiente",actualizado:new Date().toISOString()})}
+  },adj.length?"Enviado con "+adj.length+(adj.length>1?" imágenes":" imagen"):"Enviado");
+  return ok?id:null;
+}
 function tabPropuesta(n){
-  const mias=S.propuestas.filter(p=>p.negocioId===n.id).sort((a,b)=>String(b.creado||"").localeCompare(String(a.creado||"")));
-  const cab=h("div",null,h("div",{class:"sec-t",text:"Propuesta de contenido"}),
-    h("div",{class:"note",text:"Pega los enlaces de los vídeos de referencia. La IA mira cada uno, escribe qué es y por qué se lo proponemos, y monta el PDF con nuestro logo y el suyo."}));
-  const ta=(id,ph,lab)=>h("textarea",{id,placeholder:ph,rows:4,"aria-label":lab});
-  const tCont=ta("pr-contenido","Un enlace por línea\nhttps://www.instagram.com/reel/…","Referencias para su contenido");
-  const tProm=ta("pr-promo","https://www.instagram.com/reel/…","Referencias para promocionar");
-  const qProm=h("input",{id:"pr-que",placeholder:"Ej.: Formaciones","aria-label":"Qué se promociona"});
-  const nota=h("input",{id:"pr-nota",placeholder:"Ej.: que salga ella en cámara","aria-label":"Nota para la IA"});
-  const cuenta=h("span",{class:"note",id:"pr-cuenta","aria-live":"polite"});
-  const contar=()=>{const a=enlacesDe(tCont.value),b=enlacesDe(tProm.value),t=a.length+b.length,mal=[...a,...b].filter(u=>!enlaceValido(u)).length;
-    cuenta.textContent=t?t+(t>1?" enlaces":" enlace")+(mal?" · "+mal+" no "+(mal>1?"parecen":"parece")+" de Instagram, TikTok o YouTube":"")+(t>7?" · máximo 7":""):""};
-  tCont.addEventListener("input",contar);tProm.addEventListener("input",contar);
-  const enviar=async e=>{e.preventDefault();
-    const a=enlacesDe(tCont.value),b=enlacesDe(tProm.value),t=a.length+b.length;
-    if(!t){toast("Pega al menos un enlace");tCont.focus();return}
-    if(t>7){toast("Máximo 7 enlaces por propuesta");return}
-    const mal=[...a,...b].find(u=>!enlaceValido(u));if(mal){toast("Revisa este enlace: "+mal.slice(0,60));return}
-    if(b.length&&!qProm.value.trim()){toast("Escribe qué se promociona (p. ej. Formaciones)");qProm.focus();return}
-    const limpia=u=>u.split("?")[0].split("#")[0];const ahora=new Date().toISOString();
-    const refs=[...a.map(u=>({url:limpia(u),bloque:"contenido"})),...b.map(u=>({url:limpia(u),bloque:"promocion"}))];
-    const ok=await escribir(()=>db.collection("propuestas").add({negocioId:n.id,estado:"pendiente",refs,promocion:b.length?qProm.value.trim():null,
-      nota:nota.value.trim()||null,autor:myId||null,autorNombre:yo()||null,creado:ahora,actualizado:ahora}),"Propuesta en cola");
-    if(ok){for(const el of[tCont,tProm,qProm,nota])el.value="";contar();registrar(n.id,"Contenido","Propuesta pedida ("+t+(t>1?" referencias)":" referencia)"))}};
-  const form=canWrite?h("form",{class:"box",style:"gap:12px",onsubmit:enviar},
-    h("div",{class:"field"},h("label",{for:"pr-contenido",text:"Referencias para su contenido"}),tCont),
-    h("div",{class:"field"},h("label",{for:"pr-promo",text:"Referencias para promocionar (opcional)"}),tProm),
-    h("div",{class:"grid2"},h("div",{class:"field"},h("label",{for:"pr-que",text:"Qué se promociona"}),qProm),
-      h("div",{class:"field"},h("label",{for:"pr-nota",text:"Algo que deba saber la IA (opcional)"}),nota)),
-    h("div",{class:"actions"},h("button",{class:"btn dark",type:"submit"},"Generar propuesta"),cuenta)):null;
-  const borrar=p=>dialogo("¿Borrar esta propuesta?",h("p",{class:"note",text:"Se borra la propuesta del "+fechaHoraProp(p.creado)+" y su PDF. No se puede deshacer."}),
-    h("div",{class:"actions"},h("button",{class:"btn dark",type:"button",onclick:async()=>{cerrarDialogo();await escribir(()=>db.doc("propuestas/"+p.id).delete(),"Propuesta borrada")}},"Borrar"),
-      h("button",{class:"btn",type:"button",onclick:cerrarDialogo},"Cancelar")));
-  const fila=p=>{const[et,ex]=PROP_EST[p.estado]||[p.estado||"",""];const nr=(p.refs||[]).length;
-    return h("div",{class:"pfila"},
-      h("div",{style:"min-width:0;display:grid;gap:3px"},
-        h("div",{class:"prop-t"},h("span",{class:"prop-e prop-"+(p.estado||"pendiente"),text:et}),h("b",{text:fechaHoraProp(p.creado)})),
-        h("div",{class:"note",text:nr+(nr===1?" referencia":" referencias")+(p.promocion?" · promoción: "+p.promocion:"")+(p.autorNombre?" · pedida por "+p.autorNombre:"")}),
-        p.estado==="error"&&p.error?h("div",{class:"note",style:"color:var(--danger)",text:p.error}):(ex?h("div",{class:"note",text:ex}):null)),
-      h("div",{class:"actions",style:"flex-wrap:nowrap"},
-        p.estado==="lista"?h("button",{class:"btn dark small",type:"button",onclick:e=>descargarPropuesta(p,n,e.currentTarget)},"Descargar PDF"):null,
-        p.estado==="error"&&canWrite?h("button",{class:"btn small",type:"button",onclick:()=>escribir(()=>db.doc("propuestas/"+p.id).update({estado:"pendiente",error:null,actualizado:new Date().toISOString()}),"De nuevo en cola")},"Reintentar"):null,
-        canWrite&&p.estado!=="procesando"?h("button",{class:"x",type:"button","aria-label":"Borrar propuesta",title:"Borrar",onclick:()=>borrar(p)},"×"):null));
+  const mias=S.propuestas.filter(p=>p.negocioId===n.id);
+  const hilos={};for(const p of mias)(hilos[p.hiloId||p.id]||(hilos[p.hiloId||p.id]=[])).push(p);
+  const orden=Object.values(hilos).map(vs=>vs.sort((a,b)=>(a.version||1)-(b.version||1)))
+    .sort((a,b)=>String(b[b.length-1].creado||"").localeCompare(String(a[a.length-1].creado||"")));
+  abierto.pcAbiertos=abierto.pcAbiertos||{};
+  const repintar=()=>pintarTab(S.negocios.find(x=>x.id===n.id)||n);
+  const cab=h("div",{class:"rowx"},h("div",null,h("div",{class:"sec-t",text:"Propuesta de contenido"}),
+      h("div",{class:"note",text:"Pega los enlaces de referencia y la IA monta el PDF. Después, pídele en el chat los cambios que quieras: cada mensaje genera una versión nueva."})),
+    orden.length&&canWrite&&!abierto.pcNueva?h("button",{class:"btn small",type:"button",onclick:()=>{abierto.pcNueva=true;repintar()}},"Nueva propuesta"):null);
+
+  /* --- Nueva propuesta (primer mensaje del hilo) --- */
+  let form=null;
+  if(canWrite&&(!orden.length||abierto.pcNueva)){
+    const ta=(id,ph,lab)=>h("textarea",{id,placeholder:ph,rows:4,"aria-label":lab});
+    const tCont=ta("pr-contenido","Un enlace por línea\nhttps://www.instagram.com/reel/…","Referencias para su contenido");
+    const tProm=ta("pr-promo","https://www.instagram.com/reel/…","Referencias para promocionar");
+    const qProm=h("input",{id:"pr-que",placeholder:"Ej.: Formaciones","aria-label":"Qué se promociona"});
+    const nota=h("input",{id:"pr-nota",placeholder:"Ej.: que salga ella en cámara","aria-label":"Nota para la IA"});
+    const cuenta=h("span",{class:"note",id:"pr-cuenta","aria-live":"polite"});
+    const contar=()=>{const a=enlacesDe(tCont.value),b=enlacesDe(tProm.value),t=a.length+b.length,mal=[...a,...b].filter(u=>!enlaceValido(u)).length;
+      cuenta.textContent=t?t+(t>1?" enlaces":" enlace")+(mal?" · "+mal+" no "+(mal>1?"parecen":"parece")+" de Instagram, TikTok o YouTube":"")+(t>PC_MAX_REFS?" · máximo "+PC_MAX_REFS:""):""};
+    tCont.addEventListener("input",contar);tProm.addEventListener("input",contar);
+    const adj=pcAdjuntos("nueva",repintar);
+    const enviar=async e=>{e.preventDefault();
+      const a=enlacesDe(tCont.value),b=enlacesDe(tProm.value),t=a.length+b.length;
+      if(!t){toast("Pega al menos un enlace");tCont.focus();return}
+      if(t>PC_MAX_REFS){toast("Máximo "+PC_MAX_REFS+" enlaces por propuesta");return}
+      const mal=[...a,...b].find(u=>!enlaceValido(u));if(mal){toast("Revisa este enlace: "+mal.slice(0,60));return}
+      if(b.length&&!qProm.value.trim()){toast("Escribe qué se promociona (p. ej. Formaciones)");qProm.focus();return}
+      const limpia=u=>u.split("?")[0].split("#")[0];
+      const refs=[...a.map(u=>({url:limpia(u),bloque:"contenido"})),...b.map(u=>({url:limpia(u),bloque:"promocion"}))];
+      const btn=e.submitter;if(btn)btn.disabled=true;
+      const id=await pcCrearVersion({negocioId:n.id,version:1,refs,promocion:b.length?qProm.value.trim():null,nota:nota.value.trim()||null},adj.lista);
+      if(btn)btn.disabled=false;
+      if(id){for(const el of[tCont,tProm,qProm,nota])el.value="";PC_ADJ.nueva=[];abierto.pcNueva=false;abierto.pcAbiertos[id]=true;
+        registrar(n.id,"Contenido","Propuesta pedida ("+t+(t>1?" referencias)":" referencia)"));repintar()}};
+    form=h("form",{class:"box",style:"gap:12px",onsubmit:enviar},
+      h("div",{class:"field"},h("label",{for:"pr-contenido",text:"Referencias para su contenido"}),tCont),
+      h("div",{class:"field"},h("label",{for:"pr-promo",text:"Referencias para promocionar (opcional)"}),tProm),
+      h("div",{class:"grid2"},h("div",{class:"field"},h("label",{for:"pr-que",text:"Qué se promociona"}),qProm),
+        h("div",{class:"field"},h("label",{for:"pr-nota",text:"Algo que deba saber la IA (opcional)"}),nota)),
+      adj.chips,adj.input,
+      h("div",{class:"actions"},h("button",{class:"btn dark",type:"submit"},"Generar propuesta"),adj.boton,
+        h("span",{class:"note",text:"Puedes adjuntar el logo del cliente o capturas."}),cuenta,
+        orden.length?h("button",{class:"btn small ghost",type:"button",onclick:()=>{abierto.pcNueva=false;repintar()}},"Cancelar"):null));
+  }
+
+  /* --- Hilos --- */
+  const burbujaIA=p=>{
+    const dl=p.estado==="lista"?h("button",{class:"btn dark small",type:"button",onclick:e=>descargarPropuesta(p,n,e.currentTarget)},"Descargar PDF · v"+(p.version||1)):null;
+    if(p.estado==="lista")return h("div",{class:"pc-msg pc-ia"},h("div",{class:"pc-txt",text:p.respuesta||("Aquí tienes la versión "+(p.version||1)+".")}),
+      h("div",{class:"pc-pie"},dl,h("span",{class:"pc-hora",text:fechaHoraProp(p.actualizado)})));
+    if(p.estado==="error")return h("div",{class:"pc-msg pc-ia pc-err"},h("div",{class:"pc-txt",text:p.error||"No he podido generar esta versión."}),
+      canWrite?h("div",{class:"pc-pie"},h("button",{class:"btn small",type:"button",onclick:()=>escribir(()=>db.doc("propuestas/"+p.id).update({estado:"pendiente",error:null,actualizado:new Date().toISOString()}),"De nuevo en cola")},"Reintentar")):null);
+    const txt=p.estado==="borrador"?"Subiendo imágenes…":p.estado==="procesando"?"Mirando los vídeos y preparando la versión "+(p.version||1)+"…":"Recibido. Empiezo en cuanto el ordenador de Manu esté encendido (suele tardar 2–4 min).";
+    return h("div",{class:"pc-msg pc-ia pc-espera"},h("span",{class:"pc-puntos","aria-hidden":"true"},h("i"),h("i"),h("i")),h("div",{class:"pc-txt",text:txt}));
   };
-  return[cab,form,h("section",{class:"sec"},h("div",{class:"label",text:"Propuestas"+(mias.length?" ("+mias.length+")":"")}),
-    mias.length?h("div",{class:"stack"},mias.map(fila)):h("div",{class:"empty",text:"Todavía no hay ninguna propuesta para este negocio."}))];
+  const burbujaYo=p=>{
+    const nr=(p.refs||[]).length,na=Number(p.adjuntosN)||0;
+    const cuerpo=(p.version||1)===1
+      ?h("div",{class:"pc-txt"},h("b",{text:"Propuesta con "+nr+(nr===1?" referencia":" referencias")}),
+         h("ol",{class:"pc-refs"},(p.refs||[]).map(r=>h("li",null,h("a",{href:r.url,target:"_blank",rel:"noopener",text:r.url.replace(/^https:\/\/(www\.)?/,"").replace(/\/$/,"")}),
+           r.bloque==="promocion"?h("span",{class:"pc-blq",text:p.promocion||"Promoción"}):null))),
+         p.nota?h("div",{text:"Nota: "+p.nota}):null)
+      :h("div",{class:"pc-txt",text:p.cambios||""});
+    return h("div",{class:"pc-msg pc-yo"},cuerpo,
+      h("div",{class:"pc-pie"},na?h("span",{class:"pc-hora",text:"📎 "+na+(na>1?" imágenes":" imagen")}):null,
+        h("span",{class:"pc-hora",text:[p.autorNombre,fechaHoraProp(p.creado)].filter(Boolean).join(" · ")})));
+  };
+  const hiloHTML=(vs,i)=>{
+    const raiz=vs[0],ult=vs[vs.length-1],hid=raiz.hiloId||raiz.id;
+    const abiertoH=abierto.pcAbiertos[hid]!=null?abierto.pcAbiertos[hid]:i===0;
+    const baseOk=[...vs].reverse().find(v=>v.estado==="lista");
+    const ocupado=vs.some(v=>v.estado==="pendiente"||v.estado==="procesando"||v.estado==="borrador");
+    const est=ult.estado==="lista"?"Lista":ult.estado==="error"?"Error":"Generando";
+    let composer=null;
+    if(canWrite){
+      const clave="hilo-"+hid,tid="pr-msg-"+hid;
+      const adj=pcAdjuntos(clave,repintar);
+      const t=h("textarea",{id:tid,rows:2,placeholder:ocupado?"Espera a que termine la versión "+(ult.version||1)+"…":baseOk?"Pide un cambio: «la 3 más corta», «cambia la 2 por https://…», «tono más cercano»…":"Cuando salga la primera versión podrás pedir cambios aquí",
+        disabled:ocupado||!baseOk,"aria-label":"Mensaje para la IA",onkeydown:e=>{if(e.key==="Enter"&&(e.ctrlKey||e.metaKey)){e.preventDefault();mandar()}}});
+      const mandar=async()=>{const c=t.value.trim();if(c.length<3&&!adj.lista.length){toast("Escribe qué quieres cambiar");t.focus();return}
+        const v=Math.max(...vs.map(x=>Number(x.version)||1))+1;
+        const id=await pcCrearVersion({negocioId:n.id,hiloId:hid,version:v,baseId:baseOk.id,cambios:c||"(Mira las imágenes adjuntas)",refs:baseOk.refs||[],promocion:baseOk.promocion||null,nota:baseOk.nota||null},adj.lista);
+        if(id){t.value="";PC_ADJ[clave]=[];registrar(n.id,"Contenido","Cambios pedidos en la propuesta (versión "+v+")");repintar()}};
+      composer=h("div",{class:"pc-composer"},adj.chips,adj.input,
+        h("div",{class:"pc-fila"},ocupado||!baseOk?null:adj.boton,t,
+          h("button",{class:"btn dark pc-enviar",type:"button","aria-label":"Enviar",title:"Enviar (Ctrl+Enter)",html:ICON_SEND,disabled:ocupado||!baseOk,onclick:mandar})));
+    }
+    const borrar=()=>dialogo("¿Borrar esta propuesta?",h("p",{class:"note",text:"Se borran sus "+vs.length+(vs.length>1?" versiones":" versión")+", con sus PDF y sus imágenes. No se puede deshacer."}),
+      h("div",{class:"actions"},h("button",{class:"btn dark",type:"button",onclick:async()=>{cerrarDialogo();await escribir(async()=>{for(const v of [...vs].reverse())await db.doc("propuestas/"+v.id).delete()},"Propuesta borrada")}},"Borrar"),
+        h("button",{class:"btn",type:"button",onclick:cerrarDialogo},"Cancelar")));
+    const d=h("details",{class:"pc-hilo",open:abiertoH,ontoggle:e=>{abierto.pcAbiertos[hid]=e.target.open}},
+      h("summary",null,h("span",{class:"pc-est pc-"+(ult.estado==="lista"?"lista":ult.estado==="error"?"error":"curso"),text:est}),
+        h("b",{text:"Propuesta del "+fechaHoraProp(raiz.creado)}),h("span",{class:"note",text:(raiz.refs||[]).length+" referencias · "+vs.length+(vs.length>1?" versiones":" versión")}),
+        canWrite&&!ocupado?h("button",{class:"x",type:"button","aria-label":"Borrar propuesta",title:"Borrar propuesta",onclick:e=>{e.preventDefault();borrar()}},"×"):null),
+      h("div",{class:"pc-msgs"},vs.flatMap(v=>[burbujaYo(v),burbujaIA(v)])),composer);
+    return d;
+  };
+  return[cab,form,orden.length?h("div",{class:"stack"},orden.map(hiloHTML)):(form?null:h("div",{class:"empty",text:"Todavía no hay ninguna propuesta para este negocio."}))];
 }
 async function descargarPropuesta(p,n,btn){
   if(!window.VEOUP_SB){toast("La descarga solo funciona en crm.veoup.es");return}
@@ -2404,7 +2528,7 @@ async function descargarPropuesta(p,n,btn){
     if(error||!data)throw error||new Error("sin PDF");
     const bin=atob(data.pdf_b64),u8=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u8[i]=bin.charCodeAt(i);
     const url=URL.createObjectURL(new Blob([u8],{type:"application/pdf"}));
-    const a=h("a",{href:url,download:"Propuesta VEO UP - "+String(n.nombre||"cliente").replace(/[\\/:*?"<>|]/g,"")+".pdf"});document.body.append(a);a.click();a.remove();
+    const a=h("a",{href:url,download:"Propuesta VEO UP - "+String(n.nombre||"cliente").replace(/[\\/:*?"<>|]/g,"")+((p.version||1)>1?" v"+p.version:"")+".pdf"});document.body.append(a);a.click();a.remove();
     setTimeout(()=>URL.revokeObjectURL(url),60000);
   }catch(e){toast("No se pudo descargar el PDF. Prueba otra vez en un momento.")}
   finally{btn.disabled=false;btn.textContent=t}
