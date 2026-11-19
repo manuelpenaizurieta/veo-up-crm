@@ -66,9 +66,11 @@ async function cargar(t){
     for(const f of data)m.set(f[d.pk],f);if(data.length<1000)break;desde+=1000}
   CACHE[t]=m;
 }
+/* Canales abiertos por tabla, para poder vigilarlos (ver revisarCanales) */
+const CANALES={};
 function escuchar(t){
   let suscrito=false;
-  sb.channel("rt_"+t).on("postgres_changes",{event:"*",schema:"public",table:t},p=>{
+  CANALES[t]=sb.channel("rt_"+t).on("postgres_changes",{event:"*",schema:"public",table:t},p=>{
     const d=T[t];const m=CACHE[t]||(CACHE[t]=new Map());
     if(p.eventType==="DELETE"){const id=p.old&&p.old[d.pk];if(id!=null)m.delete(id)}else m.set(p.new[d.pk],p.new);
     emitirPronto(t)}).subscribe(st=>{
@@ -90,6 +92,25 @@ const siHaceRato=()=>{if(Date.now()-ultRecarga>15000)ponerAlDiaPronto()};
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")siHaceRato()});
 window.addEventListener("focus",siHaceRato);
 window.addEventListener("online",ponerAlDiaPronto);
+/* Vigilante del tiempo real (Manu, 2026-11-19: «no se me actualiza el CRM en tiempo real»).
+   Se vio con el CRM abierto un rato: los 13 canales en «errored» y sin volver a unirse (suele pasar al caducar el token
+   de la sesión, que se renueva cada hora, o tras un corte de red o suspensión). El socket seguía conectado y un canal
+   nuevo entraba sin problema. Ahora: cada 30 s (y al volver a la pestaña o a la red) se rehacen los canales rotos con el
+   token actual y se pone al día lo perdido. Además, cada renovación de sesión pasa el token nuevo al tiempo real. */
+sb.auth.onAuthStateChange((ev,ses)=>{if(ses&&ses.access_token){try{sb.realtime.setAuth(ses.access_token)}catch(e){}}});
+const rtRoto=c=>!c||c.state==="errored"||c.state==="closed";
+async function revisarCanales(){
+  if(!SES)return;const rotos=Object.keys(CANALES).filter(t=>rtRoto(CANALES[t]));if(!rotos.length)return;
+  try{const{data}=await sb.auth.getSession();if(data&&data.session)sb.realtime.setAuth(data.session.access_token)}catch(e){}
+  for(const t of rotos){try{sb.removeChannel(CANALES[t])}catch(e){}delete CANALES[t];escuchar(t)}
+  console.info("CRM: canales de tiempo real rehechos:",rotos.join(", "));
+  ponerAlDiaPronto();
+}
+setInterval(revisarCanales,30000);
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")revisarCanales()});
+window.addEventListener("online",()=>setTimeout(revisarCanales,2000));
+/* Para el indicador del CRM: true si todos los canales están unidos */
+window.VEOUP_RT_OK=()=>{const cs=Object.values(CANALES);return cs.length>0&&cs.every(c=>c.state==="joined")};
 setInterval(()=>{if(document.visibilityState==="visible"&&Date.now()-ultRecarga>110000)ponerAlDia()},30000);
 const local=(t,f)=>{(CACHE[t]||(CACHE[t]=new Map())).set(f[T[t].pk],f);emitirPronto(t)};
 

@@ -993,10 +993,10 @@ table.dt tfoot td{font-weight:700;border-top:1px solid var(--line);border-bottom
 .kmeta>span:first-child{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .kmeta>span:last-child{flex:none}
 </style>
-<script>window.VEOUP_BUILD="e685c3b4a1ec";</script>
+<script>window.VEOUP_BUILD="5147fb1ec4ea";</script>
 <script src="config.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
-<script src="supa.js?v=58ab0a5a95"></script>
+<script src="supa.js?v=92146dc0e6"></script>
 </head>
 <body>
 <header class="shell">
@@ -3655,7 +3655,7 @@ function pintarNav(v){
     h("button",{class:"nav-i nav-mas",type:"button","aria-current":NAV.some(x=>x&&x[2]&&x[0]===v)?"page":"false",onclick:menuNavMas,html:icono("mas")},h("span",{class:"nav-l",text:"Más"})));
   const meta=$("#sideMeta");if(!meta)return;const oscuro=document.documentElement.getAttribute("data-theme")==="dark";
   meta.replaceChildren(...[
-    h("div",{class:"vivo"},h("i",{class:db&&allReady()?"":"warn"}),db&&allReady()?"En tiempo real":"Conectando…"),
+    (()=>{const vivo=db&&allReady()&&(!SUPA||!window.VEOUP_RT_OK||window.VEOUP_RT_OK());return h("div",{class:"vivo"},h("i",{class:vivo?"":"warn"}),vivo?"En tiempo real":db&&allReady()?"Reconectando…":"Conectando…")})(),
     canWrite?null:h("div",{text:"Solo lectura"}),
     h("button",{type:"button",onclick:cambiarTema,html:icono(oscuro?"sol":"luna")+"<span>"+(oscuro?"Tema claro":"Tema oscuro")+"</span>"})].filter(Boolean));
 }
@@ -3984,6 +3984,9 @@ document.addEventListener("keydown",e=>{
 });
 /* Panel lateral de la ficha: clic fuera para cerrar (escritorio) */
 document.addEventListener("click",e=>{if(abierto&&e.target===document.body&&window.innerWidth>=1000)cerrarFicha()});
+
+/* El indicador «En tiempo real» se repinta solo cada 20 s (Manu, 2026-11-19): si los canales caen y no llegan datos, no hay render */
+if(SUPA)setInterval(()=>{if(document.visibilityState==='visible')try{pintarNav(vista())}catch(e){}},20000);
 
 /* ---------- Aviso de versión nueva (Manu, 2026-11-19) ----------
    El navegador puede quedarse unos minutos con un CRM viejo tras publicar. Cada minuto (y al volver a la pestaña o a la ventana) se compara
