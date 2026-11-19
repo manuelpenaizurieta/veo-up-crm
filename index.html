@@ -993,7 +993,7 @@ table.dt tfoot td{font-weight:700;border-top:1px solid var(--line);border-bottom
 .kmeta>span:first-child{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .kmeta>span:last-child{flex:none}
 </style>
-<script>window.VEOUP_BUILD="c7c46e73ac9b";</script>
+<script>window.VEOUP_BUILD="e685c3b4a1ec";</script>
 <script src="config.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="supa.js?v=58ab0a5a95"></script>
@@ -2451,7 +2451,8 @@ function tabPropuesta(n){
   pcMirarLatido();
   const mias=S.propuestas.filter(p=>p.negocioId===n.id);
   const hilos={};for(const p of mias)(hilos[p.hiloId||p.id]||(hilos[p.hiloId||p.id]=[])).push(p);
-  const orden=Object.values(hilos).map(vs=>vs.sort((a,b)=>(a.version||1)-(b.version||1)))
+  /* Orden de los mensajes por HORA (una respondida sin cambios y el siguiente cambio comparten número de versión) */
+  const orden=Object.values(hilos).map(vs=>vs.sort((a,b)=>String(a.creado||"").localeCompare(String(b.creado||""))||(a.version||1)-(b.version||1)))
     .sort((a,b)=>String(b[b.length-1].creado||"").localeCompare(String(a[a.length-1].creado||"")));
   abierto.pcAbiertos=abierto.pcAbiertos||{};
   const repintar=()=>pintarTab(S.negocios.find(x=>x.id===n.id)||n);
@@ -3985,7 +3986,7 @@ document.addEventListener("keydown",e=>{
 document.addEventListener("click",e=>{if(abierto&&e.target===document.body&&window.innerWidth>=1000)cerrarFicha()});
 
 /* ---------- Aviso de versión nueva (Manu, 2026-11-19) ----------
-   El navegador puede quedarse unos minutos con un CRM viejo tras publicar. Cada 2 min (y al volver a la pestaña) se compara
+   El navegador puede quedarse unos minutos con un CRM viejo tras publicar. Cada minuto (y al volver a la pestaña o a la ventana) se compara
    window.VEOUP_BUILD con version.json; si cambia, se ofrece recargar. Nunca recarga solo: se podría perder lo que se está escribiendo. */
 if(SUPA&&window.VEOUP_BUILD){
   let avisoVersion=null;
@@ -3997,7 +3998,7 @@ if(SUPA&&window.VEOUP_BUILD){
         h("button",{class:"x",type:"button","aria-label":"Ahora no",title:"Ahora no",onclick:()=>{avisoVersion.remove();setTimeout(()=>{avisoVersion=null},600000)}},"×"));
       document.body.append(avisoVersion);
     }catch(e){}};
-  setInterval(mirarVersion,120000);document.addEventListener("visibilitychange",mirarVersion);setTimeout(mirarVersion,20000);
+  setInterval(mirarVersion,60000);document.addEventListener("visibilitychange",mirarVersion);window.addEventListener("focus",mirarVersion);setTimeout(mirarVersion,15000);
 }
 
 /* ---------- Arranque ---------- */
