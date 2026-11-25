@@ -993,10 +993,10 @@ table.dt tfoot td{font-weight:700;border-top:1px solid var(--line);border-bottom
 .kmeta>span:first-child{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .kmeta>span:last-child{flex:none}
 </style>
-<script>window.VEOUP_BUILD="c00395a8b3dc";</script>
+<script>window.VEOUP_BUILD="2ae7d9af7a63";</script>
 <script src="config.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
-<script src="supa.js?v=92146dc0e6"></script>
+<script src="supa.js?v=4fd2d971bb"></script>
 </head>
 <body>
 <header class="shell">
@@ -1122,7 +1122,7 @@ const ICON_CHEV='<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="tr
 document.documentElement.setAttribute("data-theme",lsGet("tema","light"));
 function cambiarTema(){const t=document.documentElement.getAttribute("data-theme")==="dark"?"light":"dark";document.documentElement.setAttribute("data-theme",t);lsSet("tema",t);render()}
 let db=null,usr=null,dl=null,myId=null,canWrite=true;
-const S={negocios:[],actividades:[],tareas:[],piezas:[],eventos:[],web_semanas:[],ciclos:[],formularios:[],sync:[],salud:[],incidencias:[],correos:[],propuestas:[]};
+const S={negocios:[],actividades:[],tareas:[],piezas:[],eventos:[],web_semanas:[],ciclos:[],formularios:[],sync:[],salud:[],incidencias:[],correos:[],propuestas:[],entregas:[]};
 const ready={negocios:false,actividades:false,tareas:false,piezas:false,eventos:false,web_semanas:false,ciclos:false,formularios:false,sync:false,salud:false,incidencias:false}
 /* Web del CRM sobre Supabase (crm.veoup.es): la lectura de Drive la hacen triggers en la base de datos */
 const SUPA=!!window.VEOUP_SUPA;
@@ -1153,6 +1153,7 @@ function cambiosDeEtapa(n,etapa){
   if(!upd.hitos[etapa])upd.hitos[etapa]=hoy;
   if(n.reservaAviso)upd.reservaAviso="";
   if(n.formAviso)upd.formAviso="";
+  if(n.entregaAviso)upd.entregaAviso="";
   const prevSig=(ETAPAS.find(e=>e.k===n.etapa)||{}).sig,sig=(ETAPAS.find(e=>e.k===etapa)||{}).sig;
   if(etapa===DESCARTADO){upd.proximaAccion="";upd.proximaFecha=""}
   else if(sig&&(!n.proximaAccion||n.proximaAccion===prevSig||/^(Esperar el pago|Agendar la reunión con el cliente|Prueba gratuita \(Content\))/.test(n.proximaAccion))){upd.proximaAccion=sig;upd.proximaFecha=hoy}
@@ -1555,10 +1556,12 @@ function alertas(){
   if(cErr.length)al.push({n:cErr.length,t:"correo"+(cErr.length>1?"s":"")+" que no se pudo enviar",cta:"Ver ficha",go:()=>abrirFicha(cErr[0].negocioId,"resumen"),crit:true});
   const cAtasc=S.correos.filter(c=>c.estado==="en cola"&&Date.now()-new Date(c.creado).getTime()>10*60000);
   if(cAtasc.length)al.push({n:cAtasc.length,t:"correo"+(cAtasc.length>1?"s":"")+" en cola desde hace más de 10 min",cta:"Ver ficha",go:()=>abrirFicha(cAtasc[0].negocioId,"resumen")});
-  const tCD=S.tareas.filter(t=>t.auto&&!t.hecha&&t.fecha&&t.fecha<=hoy);
+  const tCD=S.tareas.filter(t=>(t.auto==="propuesta"||t.auto==="recordatorio")&&!t.hecha&&t.fecha&&t.fecha<=hoy);
   if(tCD.length)al.push({n:tCD.length,t:"tarea"+(tCD.length>1?"s":"")+" del Content Day para hoy o atrasada"+(tCD.length>1?"s":""),cta:"Ver Hoy",go:()=>location.hash="hoy",crit:tCD.some(t=>t.fecha<hoy)});
   const fAv=N.filter(n=>n.formAviso);
   if(fAv.length)al.push({n:fAv.length,t:"formulario"+(fAv.length>1?"s":"")+" actualizado"+(fAv.length>1?"s":"")+" por revisar",cta:"Ver "+(fAv.length>1?"leads":fAv[0].nombre),go:()=>abrirFicha(fAv[0].id,"resumen")});
+  const entAv=N.filter(n=>n.entregaAviso);
+  if(entAv.length)al.push({n:entAv.length,t:"entrega"+(entAv.length>1?"s":"")+" con respuesta del cliente",cta:"Ver "+(entAv.length>1?"fichas":entAv[0].nombre),go:()=>abrirFicha(entAv[0].id,"resumen")});
   const resAv=N.filter(n=>n.reservaAviso);
   if(resAv.length)al.push({n:resAv.length,t:"reserva"+(resAv.length>1?"s":"")+" del Content Day por revisar",cta:"Ver "+(resAv.length>1?"leads":resAv[0].nombre),go:()=>abrirFicha(resAv[0].id,"resumen")});
   if(RES.sinLead.length)al.push({n:RES.sinLead.length,t:"reserva"+(RES.sinLead.length>1?"s":"")+" sin lead en el CRM",cta:"Ver reservas",go:dialogoReservasSinLead});
@@ -2211,6 +2214,7 @@ function tabResumen(n){
         prop("Entrada",n.fechaEntrada?fechaLarga(n.fechaEntrada):""),
         prop("Alta como cliente",(n.hitos||{}).Cliente?fechaLarga(n.hitos.Cliente):""),
         n.formAviso?prop("Formulario actualizado",h("span",null,"⚠ "+n.formAviso+" · ",canWrite?h("button",{class:"linkbtn",type:"button",onclick:async()=>{await db.doc("negocios/"+n.id).update({formAviso:"",actualizado:new Date().toISOString()});toast("Aviso quitado")}},"Marcar como visto"):"se quita al mover la etapa")):null,
+        n.entregaAviso?prop("Aviso de entrega",h("span",null,"⚠ "+n.entregaAviso+" · ",canWrite?h("button",{class:"linkbtn",type:"button",onclick:()=>escribir(()=>db.doc("negocios/"+n.id).update({entregaAviso:"",actualizado:new Date().toISOString()}))},"Quitar aviso"):null)):null,
         n.reservaAviso?prop("Aviso de reserva","⚠ "+n.reservaAviso+" · se quita al mover la etapa"):null,
         prop("Reserva (calendario)",n.reservaEstado?(n.reservaEstado==="cancelada"?"Cancelada":"Confirmada")+" · se actualiza sola desde la agenda":""),
         n.reunion||n.etapa==="Reunión"?prop("Reunión",n.reunion?fechaLarga(n.reunion)+(n.reunionHora?" · "+n.reunionHora:""):""):null,
@@ -2219,6 +2223,7 @@ function tabResumen(n){
         prop("Carpeta de Drive",drive?h("a",{href:drive,target:"_blank",rel:"noopener"},"Abrir carpeta ↗"):canWrite?h("button",{class:"linkbtn",type:"button",onclick:()=>{irTab("datos");setTimeout(()=>$("#f-drive")?.focus(),40)}},"Añadir enlace"):""),
         prop("Check de fit",fit+" de 7"))),
     seccionPago(n),
+    seccionEntregas(n),
     seccionCorreos(n),
     seccionRequisitos(n),
     lineaTiempo(n),
@@ -2984,6 +2989,20 @@ function dialogoCorreo(n){
     h("div",{class:"box"},h("div",{class:"field"},h("label",{for:"cor-asunto",text:"Asunto"}),as),h("div",{class:"field"},h("label",{for:"cor-texto",text:"Texto"}),tx),
       h("div",{class:"actions"},h("button",{class:"btn ghost",type:"button",onclick:cerrarDialogo},"Cancelar"),h("button",{class:"btn dark",type:"button",onclick:ir},"Enviar"))));
 }
+/* Entregas (Manu, 2026-11-25): cada web veoup.es/entrega/<codigo>/ que se publica queda aquí (la registra
+   entregas/motor/registrar.py) y los botones de la web del cliente cambian su estado. Solo lectura en el CRM. */
+const ESTADO_ENTREGA={entregada:["Entregada","Esperando su respuesta"],cambios_pedidos:["Cambios pedidos","Aplicar los cambios y publicar la versión final"],
+  aprobada:["Aprobada","Pulsó «Todo perfecto»"],version_final:["Versión final","Cambios aplicados en el mismo enlace"]};
+function seccionEntregas(n){
+  const es=S.entregas.filter(x=>x.negocioId===n.id).sort((a,b)=>String(b.fechaEntrega||b.creado).localeCompare(String(a.fechaEntrega||a.creado)));
+  if(!es.length&&idxEtapa(n.etapa)<idxEtapa("Content Day agendado"))return null;
+  return h("section",{class:"sec"},h("div",{class:"sec-h"},h("div",{class:"sec-t",text:"Entregas"})),
+    es.length?h("div",{class:"stack"},es.map(x=>{const[st,det]=ESTADO_ENTREGA[x.estado]||[x.estado||"—",""];
+      return h("div",{class:"prop"},h("span",{class:"k",text:x.mes?x.mes.charAt(0).toUpperCase()+x.mes.slice(1):fechaCorta(String(x.fechaEntrega).slice(0,10))}),
+        h("span",{class:"v"},h("b",{text:st})," · "+det+(x.piezas?" · "+plural(+x.piezas,"vídeo","vídeos"):"")+" · ",
+          x.url?h("a",{href:urlSegura(x.url),target:"_blank",rel:"noopener"},"Abrir la web ↗"):null))})):
+      h("div",{class:"empty",text:"Todavía no hay ninguna entrega publicada."}));
+}
 function seccionCorreos(n){
   const cs=S.correos.filter(c=>c.negocioId===n.id).sort((a,b)=>String(b.creado).localeCompare(String(a.creado))).slice(0,5);
   const sinEmail=!emailValido(n.email);
@@ -3214,9 +3233,9 @@ async function sincronizarReservas(mcp){
     }
     const base={reservaId:r.id,reservaAct:r.act,reservaEstado:"confirmada",contentDay:hm.fecha,contentDayHora:hm.hora,actualizado:ahora};
     const cambioFecha=n.contentDay!==hm.fecha||n.contentDayHora!==hm.hora;
-    if(n.etapa==="Cliente"){
+    if(n.etapa==="Cliente"||n.etapa==="Entregado"){ /* desde «Entregado»: nuevo mes (igual que procesar_reserva en Supabase) */
       await db.doc("negocios/"+n.id).update({...cambiosDeEtapa(n,"Content Day agendado"),...base,reservaAviso:""});
-      await registrar(n.id,"Etapa","Cliente → Content Day agendado (reservó el "+cuando+")","rescd_"+r.id+"_"+r.act);
+      await registrar(n.id,"Etapa",n.etapa+" → Content Day agendado ("+(n.etapa==="Entregado"?"nuevo mes: ":"")+"reservó el "+cuando+")","rescd_"+r.id+"_"+r.act);
     }else{
       const enCD=n.etapa==="Content Day agendado";
       await db.doc("negocios/"+n.id).update({...base,reservaAviso:enCD?"":"Reservó el Content Day del "+cuando+" pero está en «"+n.etapa+"»"});
