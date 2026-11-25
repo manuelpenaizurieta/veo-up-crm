@@ -993,7 +993,7 @@ table.dt tfoot td{font-weight:700;border-top:1px solid var(--line);border-bottom
 .kmeta>span:first-child{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .kmeta>span:last-child{flex:none}
 </style>
-<script>window.VEOUP_BUILD="5147fb1ec4ea";</script>
+<script>window.VEOUP_BUILD="508c82659f33";</script>
 <script src="config.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="supa.js?v=92146dc0e6"></script>
@@ -2384,7 +2384,7 @@ function tabContenido(n){
    (v2, v3…) sobre la última que salió bien, sin límite y sin borrar las anteriores. La IA contesta en «respuesta» con su PDF.
    Lo procesa el ordenador de Manu (vigilante de 1 min + Claude con Chrome). Ver propuestas/TAREA_procesar.md. Solo en la web (SUPA).
    Las imágenes adjuntas se comprimen aquí a JPEG y se suben a propuestas_adjuntos; mientras, la versión está en «borrador». */
-const PC_MAX_REFS=7,PC_MAX_ADJ=6,PC_LADO=1600;
+const PC_MAX_REFS=11,PC_MAX_ADJ=6,PC_LADO=1600;
 const PC_ADJ={};                       /* imágenes elegidas y aún sin enviar, por caja de texto (sobreviven a los repintados) */
 const enlacesDe=t=>[...new Set((String(t||"").match(/https?:\/\/[^\s<>"']+/g)||[]).map(u=>u.replace(/[),.;]+$/,"")))];
 const enlaceValido=u=>/^https:\/\/(www\.|m\.|vm\.)?(instagram\.com\/(reel|reels|p|tv)\/|tiktok\.com\/|youtube\.com\/|youtu\.be\/)/i.test(u);
