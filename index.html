@@ -993,7 +993,7 @@ table.dt tfoot td{font-weight:700;border-top:1px solid var(--line);border-bottom
 .kmeta>span:first-child{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .kmeta>span:last-child{flex:none}
 </style>
-<script>window.VEOUP_BUILD="d3042e1b4c40";</script>
+<script>window.VEOUP_BUILD="e4e44b299478";</script>
 <script src="config.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="supa.js?v=4fd2d971bb"></script>
@@ -3040,7 +3040,11 @@ async function sincronizarCorreos(mcp){
    Si solo casa por Email → queda «por confirmar» en Avisos. Modo prueba: se aplica con etiqueta mientras sync/pagos.aceptarPrueba no sea false. */
 const PAG={estado:"",sinLead:[],diag:null};
 const PAGO_URL="https://www.veoup.es/pago/";
-function enlacePago(n){const pl=String(n.plan||"").toLowerCase();if(!PLANES[n.plan])return"";return PAGO_URL+"?plan="+encodeURIComponent(pl)+(n.plan==="Scale"&&n.googleAds?"&ads=1":"")+(n.tallyId?"&ref="+encodeURIComponent(n.tallyId):"")}
+/* Enlace de pago (2026-11-26): plan + extras (Google Ads y panel con Growth y Scale; web con cualquiera) + referencia.
+   Sin formulario (ficha creada por la reunión de /empezar) la referencia es el id de la ficha: el pago se une solo. */
+const EXTRAS_N={ads:"Google Ads",panel:"Panel en tiempo real",web:"Tu web"};
+function extrasDe(n){const ok=n.plan==="Content"?["web"]:["ads","panel","web"];const l=String(n.extras||"").split(",").map(x=>x.trim()).filter(x=>ok.includes(x));if(n.googleAds&&n.plan!=="Content"&&!l.includes("ads"))l.unshift("ads");return l}
+function enlacePago(n){const pl=String(n.plan||"").toLowerCase();if(!PLANES[n.plan])return"";return PAGO_URL+"?plan="+encodeURIComponent(pl)+extrasDe(n).map(k=>"&"+k+"=1").join("")+"&ref="+encodeURIComponent(n.tallyId||n.id)}
 const capPlan=t=>{const x=String(t||"").trim().toLowerCase();return Object.keys(PLANES).find(k=>k.toLowerCase()===x)||""};
 const eur=v=>{const t=String(v??"").trim();if(!t)return"";const x=Number(t.includes(",")?t.replace(/\./g,"").replace(",","."):t.replace(/[^0-9.-]/g,""));return isNaN(x)?t:x.toLocaleString("es-ES",{minimumFractionDigits:2,maximumFractionDigits:2})+" €"};
 function fechaDePago(f){const hm=horaMadrid(f);return hm?hm.fecha:(String(f||"").match(/^\d{4}-\d{2}-\d{2}/)||[hoyISO()])[0]}
@@ -3100,8 +3104,9 @@ function seccionPago(n){
   const i=idxEtapa(n.etapa);const pp=n.pagoPendiente;const pg=n.pago;
   if(!pg&&!pp&&!(i>=IDX_REV&&i<=IDX_PAGO))return null;
   const url=enlacePago(n);
-  const msgWa="Hola"+(n.contacto?" "+n.contacto.trim():"")+", aquí tienes el enlace para activar tu plan "+(n.plan||"")+" de VEO UP: "+url;
-  const cuerpo="Hola"+(n.contacto?" "+n.contacto.trim():"")+",\n\nAquí tienes el enlace para activar tu plan "+(n.plan||"")+" de VEO UP ("+(PLANES[n.plan]||"")+" €/mes + IVA):\n"+url+"\n\nEn cuanto se complete el pago podrás reservar tu Content Day.";
+  const ex=extrasDe(n).map(k=>EXTRAS_N[k]).join(" + "),nomPlan=(n.plan||"")+(ex?" + "+ex:"");
+  const msgWa="Hola"+(n.contacto?" "+n.contacto.trim():"")+", aquí tienes el enlace para activar tu plan "+nomPlan+" de VEO UP: "+url;
+  const cuerpo="Hola"+(n.contacto?" "+n.contacto.trim():"")+",\n\nGracias por la reunión. Aquí tienes el enlace para activar tu plan "+nomPlan+" de VEO UP:\n"+url+"\n\nAl completar el pago te pediremos unos datos de tu negocio y podrás reservar tu Content Day.";
   const cuerpoMail=()=>{dialogoCorreo(n);setTimeout(()=>{const a=$("#cor-asunto"),t=$("#cor-texto");if(a)a.value="Tu enlace para empezar con VEO UP";if(t)t.value=cuerpo},40)};
   return h("section",{class:"sec"},
     h("div",{class:"sec-h"},h("div",{class:"sec-t",text:"Pago"}),
@@ -3117,7 +3122,8 @@ function seccionPago(n){
         canWrite?h("button",{class:"linkbtn",type:"button",onclick:async()=>{if(SUPA){try{await window.VEOUP_RPC("confirmar_pago",{sid:pp.session});toast("Pago confirmado")}catch(e){toast("No se pudo confirmar ("+(e.code||"error")+")")}return}await aplicarPago(n,pp,"confirmado a mano");toast("Pago confirmado")}},"Es de este lead"):null," ",
         canWrite?h("button",{class:"linkbtn",type:"button",onclick:async()=>{if(SUPA){try{await window.VEOUP_RPC("rechazar_pago",{sid:pp.session});toast("Pago separado de este lead")}catch(e){toast("No se pudo ("+(e.code||"error")+")")}return}await db.doc("negocios/"+n.id).update({pagoPendiente:null,pagosRechazados:[...(n.pagosRechazados||[]),pp.session]});await registrar(n.id,"Etapa","Pago "+pp.email+" marcado como de otro lead","pagorech_"+pp.session);toast("Pago separado de este lead")}},"No es de este lead"):null)):null,
       !pg&&!url?prop("Enlace de pago",n.plan?"":"Elige el plan en Datos (o al pasar a «Pago pendiente») para generar el enlace"):null,
-      !pg&&url?prop("Enlace de pago",h("span",null,url,n.tallyId?"":" · sin referencia: casará por email y pedirá confirmación")):null));
+      !pg&&url?prop("Extras del enlace",ex||"Ninguno"+(n.plan==="Content"?" (con Content solo se puede añadir la web)":"")):null,
+      !pg&&url?prop("Enlace de pago",h("span",null,url)):null));
 }
 /* ---------- Leer una pestaña concreta de la hoja ----------
    Se pide la exportación .xlsx (trae todas las pestañas completas), se descomprime en el navegador y se lee la pestaña por nombre. */
