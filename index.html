@@ -993,7 +993,7 @@ table.dt tfoot td{font-weight:700;border-top:1px solid var(--line);border-bottom
 .kmeta>span:first-child{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .kmeta>span:last-child{flex:none}
 </style>
-<script>window.VEOUP_BUILD="28b9b8f5c346";</script>
+<script>window.VEOUP_BUILD="4d660ddc4ae5";</script>
 <script src="config.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="supa.js?v=4fd2d971bb"></script>
@@ -2626,8 +2626,8 @@ function tabDatos(n){
       campo("drive","Carpeta de Drive",inp(n.drive,"text",{placeholder:"https://drive.google.com/…",inputmode:"url",autocapitalize:"off"}))),
       h("label",{class:"check",for:"f-prueba"},h("input",{type:"checkbox",id:"f-prueba",name:"prueba",checked:!!n.prueba}),h("span",null,h("b",{text:"Prueba gratuita"}),h("span",{class:"note",text:" — uno de los 5 negocios de la prueba, sin pago"}))),
       h("div",{class:"note",style:"margin:10px 0 2px",text:"Extras que contrata (o que le interesan). Salen en el enlace de pago."}),
-      h("label",{class:"check",for:"f-gads"},h("input",{type:"checkbox",id:"f-gads",name:"googleAds",checked:!!n.googleAds}),h("span",null,h("b",{text:"Google Ads"}),h("span",{class:"note",text:" · +"+GOOGLE_ADS_EUR+" €/mes · solo con Growth y Scale"}))),
-      h("label",{class:"check",for:"f-xpanel"},h("input",{type:"checkbox",id:"f-xpanel",name:"xPanel",checked:extrasDe({...n,plan:"Scale"}).includes("panel")}),h("span",null,h("b",{text:"VEO UP Live (panel)"}),h("span",{class:"note",text:" · +"+PANEL_EUR+" €/mes y "+PANEL_ALTA_EUR+" € de alta (incluida en Scale) · solo con Growth y Scale"}))),
+      h("label",{class:"check",for:"f-gads"},h("input",{type:"checkbox",id:"f-gads",name:"googleAds",checked:!!n.googleAds}),h("span",null,h("b",{text:"Google Ads"}),h("span",{class:"note",text:" · +"+GOOGLE_ADS_EUR+" €/mes con Growth · incluido en Scale"}))),
+      h("label",{class:"check",for:"f-xpanel"},h("input",{type:"checkbox",id:"f-xpanel",name:"xPanel",checked:extrasDe({...n,plan:"Scale"}).includes("panel")}),h("span",null,h("b",{text:"VEO UP Live (panel)"}),h("span",{class:"note",text:" · +"+PANEL_EUR+" €/mes y "+PANEL_ALTA_EUR+" € de alta · solo con Growth y Scale"}))),
       h("label",{class:"check",for:"f-xweb"},h("input",{type:"checkbox",id:"f-xweb",name:"xWeb",checked:extrasDe({...n,plan:"Scale"}).includes("web")}),h("span",null,h("b",{text:"Tu web"}),h("span",{class:"note",text:" · "+WEB_EUR+" € pago único · con cualquier plan"})))),
     h("fieldset",null,h("legend",{text:"Check de fit"}),
       FIT.map((f,j)=>h("label",{class:"check",for:"fit-"+j},h("input",{type:"checkbox",name:"fit",value:f,id:"fit-"+j,checked:(n.fit||[]).includes(f)}),h("span",{text:f}))),
@@ -3047,7 +3047,7 @@ const PAGO_URL="https://www.veoup.es/pago/";
 /* Enlace de pago (2026-11-26): plan + extras (Google Ads y panel con Growth y Scale; web con cualquiera) + referencia.
    Sin formulario (ficha creada por la reunión de /empezar) la referencia es el id de la ficha: el pago se une solo. */
 const EXTRAS_N={ads:"Google Ads",panel:"VEO UP Live",web:"Tu web"};
-function extrasDe(n){if(!n)return[];const ok=n.plan==="Content"?["web"]:["panel","web"];const l=String(n.extras||"").split(",").map(x=>x.trim()).filter((x,i,a)=>ok.includes(x)&&a.indexOf(x)===i);if(n.googleAds&&n.plan&&n.plan!=="Content")l.unshift("ads");return l}
+function extrasDe(n){if(!n)return[];const ok=n.plan==="Content"?["web"]:["panel","web"];const l=String(n.extras||"").split(",").map(x=>x.trim()).filter((x,i,a)=>ok.includes(x)&&a.indexOf(x)===i);if(n.googleAds&&n.plan==="Growth")l.unshift("ads");return l}   /* en Scale Google Ads va incluido: no es extra */
 function enlacePago(n){const pl=String(n.plan||"").toLowerCase();if(!PLANES[n.plan])return"";return PAGO_URL+"?plan="+encodeURIComponent(pl)+extrasDe(n).map(k=>"&"+k+"=1").join("")+"&ref="+encodeURIComponent(n.tallyId||n.id)}
 const capPlan=t=>{const x=String(t||"").trim().toLowerCase();return Object.keys(PLANES).find(k=>k.toLowerCase()===x)||""};
 const eur=v=>{const t=String(v??"").trim();if(!t)return"";const x=Number(t.includes(",")?t.replace(/\./g,"").replace(",","."):t.replace(/[^0-9.-]/g,""));return isNaN(x)?t:x.toLocaleString("es-ES",{minimumFractionDigits:2,maximumFractionDigits:2})+" €"};
@@ -3057,7 +3057,7 @@ async function aplicarPago(n,pago,origen){
   const plan=capPlan(pago.plan)||n.plan||"";
   const upd={pago,pagoSession:pago.session,pagoPendiente:null,pagadoEl:fecha,formaPago:"Stripe",prueba:false,actualizado:ahora};
   if(plan)upd.plan=plan;
-  upd.googleAds=!!plan&&plan!=="Content"&&!!pago.googleAds;
+  upd.googleAds=plan==="Scale"||(plan==="Growth"&&!!pago.googleAds);
   if(pago.extras)upd.extras=String(pago.extras);
   const mover=n.etapa!==DESCARTADO&&idxEtapa(n.etapa)<IDX_CLIENTE;
   if(mover)Object.assign(upd,cambiosDeEtapa(n,"Cliente"),{fechaAlta:fecha});
@@ -3583,7 +3583,8 @@ function vistaSalud(m){
 }
 
 /* ---------- Métricas de negocio ---------- */
-/* Extras (Manu, 2026-11-26): Google Ads +250 €/mes y panel +49 €/mes solo con Growth y Scale; la web (490 €) y el alta del panel son pagos únicos y no suman al MRR. */
+/* Extras (Manu, 2026-11-26): Google Ads +250 €/mes solo en Growth (en Scale va incluido); VEO UP Live +49 €/mes con Growth y Scale;
+   la web (490 €) y el alta de VEO UP Live (290 €) son pagos únicos y no suman al MRR. */
 const GOOGLE_ADS_EUR=250,PANEL_EUR=49,WEB_EUR=490,PANEL_ALTA_EUR=290;
 function extrasMes(n){const l=extrasDe(n);return(l.includes("ads")?GOOGLE_ADS_EUR:0)+(l.includes("panel")?PANEL_EUR:0)}
 function sufijoExtras(n){const l=extrasDe(n).filter(k=>k!=="web").map(k=>k==="ads"?"Ads":"Live");return l.length?" + "+l.join(" + "):""}
@@ -3882,7 +3883,7 @@ function vistaFinanzas(m){
     const pan=pago.filter(n=>extrasDe(n).includes("panel")).length;if(pan)filasPlan.push({l:"VEO UP Live",s:plural(pan,"cliente","clientes")+" × "+PANEL_EUR+" €",v:pan*PANEL_EUR})}
   const maxP=Math.max(1,...filasPlan.map(x=>x.v));
   const reparto=h("div",{class:"hb"},filasPlan.map(x=>h("div",{class:"hb-r"},h("span",{class:"hb-l"},h("b",{text:x.l}),h("small",{text:x.s})),h("span",{class:"hb-t"},h("i",{style:"width:"+(x.v*100/maxP)+"%"})),h("b",{text:eur0(x.v)}))),
-    h("div",{class:"note",text:conStripe?"Cuota sin IVA de las suscripciones activas en Stripe (incluye Google Ads y panel si los llevan).":"Cuota de lista sin IVA de los clientes de pago activos, con Google Ads (+"+GOOGLE_ADS_EUR+" €) y panel (+"+PANEL_EUR+" €) si los llevan. La web y el alta del panel son pagos únicos y no cuentan aquí."}));
+    h("div",{class:"note",text:conStripe?"Cuota sin IVA de las suscripciones activas en Stripe (incluye Google Ads y panel si los llevan).":"Cuota de lista sin IVA de los clientes de pago activos, con Google Ads (+"+GOOGLE_ADS_EUR+" €, en Growth; en Scale va incluido) y VEO UP Live (+"+PANEL_EUR+" €) si los llevan. La web y el alta del panel son pagos únicos y no cuentan aquí."}));
   m.append(h("div",{class:"grid2"},
     tarjetaPanel("Cobros por mes",h("span",{class:"note",text:"Total con IVA · últimos 6 meses"}),h("div",{class:"card-b"},graf,
       conStripe?null:h("div",{class:"note",text:"Todavía no hay datos de suscripciones de Stripe: se muestran los pagos de alta."}))),
