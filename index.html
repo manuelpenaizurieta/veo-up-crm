@@ -993,7 +993,7 @@ table.dt tfoot td{font-weight:700;border-top:1px solid var(--line);border-bottom
 .kmeta>span:first-child{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .kmeta>span:last-child{flex:none}
 </style>
-<script>window.VEOUP_BUILD="e4e44b299478";</script>
+<script>window.VEOUP_BUILD="28b9b8f5c346";</script>
 <script src="config.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="supa.js?v=4fd2d971bb"></script>
@@ -1227,7 +1227,7 @@ function tarjeta(n,opt={}){
       avatar(n)),
     (n.sector||n.contacto)?h("div",{class:"sub",text:[n.contacto,n.sector].filter(Boolean).join(" · ")}):null,
     h("div",{class:"tags"},
-      n.plan?h("span",{class:"tag",title:"Plan",text:n.plan+" · "+PLANES[n.plan]+" €"+(n.plan==="Scale"&&n.googleAds?" + Ads":"")}):null,
+      n.plan?h("span",{class:"tag",title:"Plan",text:n.plan+" · "+PLANES[n.plan]+" €"+sufijoExtras(n)}):null,
       n.prueba?h("span",{class:"tag tipo g",title:"Prueba gratuita: no paga",text:"GRATIS"}):h("span",{class:"tag tipo p",title:"Flujo de pago",text:"PAGO"}),
       etiquetaOrigen(n),
       n.pruebaInterna?h("span",{class:"tag interna",title:"Entrada de prueba: se puede borrar",text:"Prueba interna"}):null,
@@ -2209,7 +2209,7 @@ function tabResumen(n){
         prop("Email de confirmación",n.confirmacion?(/^error/i.test(n.confirmacion)?"⚠ "+n.confirmacion:n.confirmacion):""),
         prop("Email de bienvenida",n.bienvenidaCola&&!n.bienvenida?"En cola (sale desde start@veoup.es en 1–2 min)":n.bienvenida?(/^error/i.test(n.bienvenida)?"⚠ "+n.bienvenida:n.bienvenida):""),
         prop("Plan",n.plan?n.plan+" · "+PLANES[n.plan]+" €/mes"+(n.prueba?" · prueba gratuita":""):""),
-        prop("Valor mensual",idxEtapa(n.etapa)>=IDX_CLIENTE&&n.etapa!==DESCARTADO?(n.prueba?"0 € · prueba gratuita":n.plan?valorMensual(n).toLocaleString("es-ES")+" €/mes"+(n.plan==="Scale"&&n.googleAds?" (incluye Google Ads +"+GOOGLE_ADS_EUR+" €)":""):"Falta el plan"):n.plan?"— (aún no es cliente; su plan: "+PLANES[n.plan]+" €/mes)":""),
+        prop("Valor mensual",idxEtapa(n.etapa)>=IDX_CLIENTE&&n.etapa!==DESCARTADO?(n.prueba?"0 € · prueba gratuita":n.plan?valorMensual(n).toLocaleString("es-ES")+" €/mes"+(extrasMes(n)?" (incluye "+extrasDe(n).filter(k=>k!=="web").map(k=>k==="ads"?"Google Ads +"+GOOGLE_ADS_EUR+" €":"VEO UP Live +"+PANEL_EUR+" €").join(" y ")+")":""):"Falta el plan"):n.plan?"— (aún no es cliente; su plan: "+PLANES[n.plan]+" €/mes)":""),
         prop("Origen",n.origen?(n.origen==="QR"&&n.campana?"QR · "+n.campana:n.origen)+(n.origenDetalle?" · "+n.origenDetalle:""):""),
         prop("Entrada",n.fechaEntrada?fechaLarga(n.fechaEntrada):""),
         prop("Alta como cliente",(n.hitos||{}).Cliente?fechaLarga(n.hitos.Cliente):""),
@@ -2625,7 +2625,10 @@ function tabDatos(n){
       campo("entrega","Entrega prevista",inp(n.entrega,"date")),
       campo("drive","Carpeta de Drive",inp(n.drive,"text",{placeholder:"https://drive.google.com/…",inputmode:"url",autocapitalize:"off"}))),
       h("label",{class:"check",for:"f-prueba"},h("input",{type:"checkbox",id:"f-prueba",name:"prueba",checked:!!n.prueba}),h("span",null,h("b",{text:"Prueba gratuita"}),h("span",{class:"note",text:" — uno de los 5 negocios de la prueba, sin pago"}))),
-      h("label",{class:"check",for:"f-gads"},h("input",{type:"checkbox",id:"f-gads",name:"googleAds",checked:!!n.googleAds}),h("span",null,h("b",{text:"Google Ads (opcional en Scale)"}),h("span",{class:"note",text:" — suma "+GOOGLE_ADS_EUR+" €/mes al MRR; cifra de ejemplo, pendiente de cerrar con Stevan"})))),
+      h("div",{class:"note",style:"margin:10px 0 2px",text:"Extras que contrata (o que le interesan). Salen en el enlace de pago."}),
+      h("label",{class:"check",for:"f-gads"},h("input",{type:"checkbox",id:"f-gads",name:"googleAds",checked:!!n.googleAds}),h("span",null,h("b",{text:"Google Ads"}),h("span",{class:"note",text:" · +"+GOOGLE_ADS_EUR+" €/mes · solo con Growth y Scale"}))),
+      h("label",{class:"check",for:"f-xpanel"},h("input",{type:"checkbox",id:"f-xpanel",name:"xPanel",checked:extrasDe({...n,plan:"Scale"}).includes("panel")}),h("span",null,h("b",{text:"VEO UP Live (panel)"}),h("span",{class:"note",text:" · +"+PANEL_EUR+" €/mes y "+PANEL_ALTA_EUR+" € de alta (incluida en Scale) · solo con Growth y Scale"}))),
+      h("label",{class:"check",for:"f-xweb"},h("input",{type:"checkbox",id:"f-xweb",name:"xWeb",checked:extrasDe({...n,plan:"Scale"}).includes("web")}),h("span",null,h("b",{text:"Tu web"}),h("span",{class:"note",text:" · "+WEB_EUR+" € pago único · con cualquier plan"})))),
     h("fieldset",null,h("legend",{text:"Check de fit"}),
       FIT.map((f,j)=>h("label",{class:"check",for:"fit-"+j},h("input",{type:"checkbox",name:"fit",value:f,id:"fit-"+j,checked:(n.fit||[]).includes(f)}),h("span",{text:f}))),
       h("div",{class:"note",text:"Check rápido del documento de Stevan (apartado 5)."})),
@@ -2661,6 +2664,7 @@ async function guardarFicha(prev){
   d.fit=[...f.querySelectorAll('input[name="fit"]:checked')].map(i=>i.value);
   d.objetivos=[...f.querySelectorAll('input[name="objetivos"]:checked')].map(i=>i.value);
   d.prueba=$("#f-prueba").checked;d.googleAds=$("#f-gads").checked;
+  d.extras=[d.googleAds?"ads":"",$("#f-xpanel").checked?"panel":"",$("#f-xweb").checked?"web":""].filter(Boolean).join(",");
   if(!d.nombre){toast("Falta el nombre del negocio");$("#f-nombre").focus();return}
   if(d.origen!=="QR")d.campana="";
   if(d.drive&&!urlSegura(d.drive)){toast("El enlace de Drive no parece válido");$("#f-drive").focus();return}
@@ -2843,7 +2847,7 @@ async function sincronizarFormularios(manual,silencioso){
         const entrada=etapaDeEntrada(planDeForm(campos.planInteres),campos.confirmacion);
         await db.doc("negocios/"+id).set({...campos,nombre:campos.nombre||"Sin nombre",etapa:entrada,origen:"Web-Formulario",origenDetalle:"Formulario Tally",
           fechaEntrada:fechaForm,hitos:{"Nuevo lead":fechaForm,[entrada]:hoyISO()},...(entrada==="Pago pendiente"?{formaPago:"Stripe"}:{}),autoPagoPendiente:sid,fit:[],prueba:false,pruebaInterna:prueba,
-          ...(planDeForm(campos.planInteres)?{plan:planDeForm(campos.planInteres),googleAds:planDeForm(campos.planInteres)==="Scale"&&adsDeForm(campos.adsInteres)}:{}),
+          ...(planDeForm(campos.planInteres)?{plan:planDeForm(campos.planInteres),googleAds:["Growth","Scale"].includes(planDeForm(campos.planInteres))&&adsDeForm(campos.adsInteres)}:{}),
           ...(entrada==="Cliente"?EXTRA_GRATIS():{}),tallyId:sid,formEnviado:envioISO(enviadoEl)||fechaForm||"",
           proximaAccion:sigDeEntrada(entrada),proximaFecha:hoyISO(),notas:prueba?"Entrada de prueba interna (nombre del negocio: VEO UP). Se puede borrar.":"",creado:ahora,actualizado:ahora});
         await registrar(id,"Formulario","Entró por el formulario de Tally ("+(enviadoEl||fechaForm)+")"+(prueba?" · prueba interna":"")+" → "+entrada+(entrada==="Cliente"?" (modo gratis: Content con prueba gratuita; ya se le envió la bienvenida)":entrada==="Reunión"?" (plan "+planDeForm(campos.planInteres)+": reunión antes del pago)":" (le llega el enlace de pago por email)"),"form_"+sid);
@@ -3042,8 +3046,8 @@ const PAG={estado:"",sinLead:[],diag:null};
 const PAGO_URL="https://www.veoup.es/pago/";
 /* Enlace de pago (2026-11-26): plan + extras (Google Ads y panel con Growth y Scale; web con cualquiera) + referencia.
    Sin formulario (ficha creada por la reunión de /empezar) la referencia es el id de la ficha: el pago se une solo. */
-const EXTRAS_N={ads:"Google Ads",panel:"Panel en tiempo real",web:"Tu web"};
-function extrasDe(n){const ok=n.plan==="Content"?["web"]:["ads","panel","web"];const l=String(n.extras||"").split(",").map(x=>x.trim()).filter(x=>ok.includes(x));if(n.googleAds&&n.plan!=="Content"&&!l.includes("ads"))l.unshift("ads");return l}
+const EXTRAS_N={ads:"Google Ads",panel:"VEO UP Live",web:"Tu web"};
+function extrasDe(n){if(!n)return[];const ok=n.plan==="Content"?["web"]:["panel","web"];const l=String(n.extras||"").split(",").map(x=>x.trim()).filter((x,i,a)=>ok.includes(x)&&a.indexOf(x)===i);if(n.googleAds&&n.plan&&n.plan!=="Content")l.unshift("ads");return l}
 function enlacePago(n){const pl=String(n.plan||"").toLowerCase();if(!PLANES[n.plan])return"";return PAGO_URL+"?plan="+encodeURIComponent(pl)+extrasDe(n).map(k=>"&"+k+"=1").join("")+"&ref="+encodeURIComponent(n.tallyId||n.id)}
 const capPlan=t=>{const x=String(t||"").trim().toLowerCase();return Object.keys(PLANES).find(k=>k.toLowerCase()===x)||""};
 const eur=v=>{const t=String(v??"").trim();if(!t)return"";const x=Number(t.includes(",")?t.replace(/\./g,"").replace(",","."):t.replace(/[^0-9.-]/g,""));return isNaN(x)?t:x.toLocaleString("es-ES",{minimumFractionDigits:2,maximumFractionDigits:2})+" €"};
@@ -3053,7 +3057,8 @@ async function aplicarPago(n,pago,origen){
   const plan=capPlan(pago.plan)||n.plan||"";
   const upd={pago,pagoSession:pago.session,pagoPendiente:null,pagadoEl:fecha,formaPago:"Stripe",prueba:false,actualizado:ahora};
   if(plan)upd.plan=plan;
-  upd.googleAds=plan==="Scale"&&!!pago.googleAds;
+  upd.googleAds=!!plan&&plan!=="Content"&&!!pago.googleAds;
+  if(pago.extras)upd.extras=String(pago.extras);
   const mover=n.etapa!==DESCARTADO&&idxEtapa(n.etapa)<IDX_CLIENTE;
   if(mover)Object.assign(upd,cambiosDeEtapa(n,"Cliente"),{fechaAlta:fecha});
   if(n.etapa===DESCARTADO)upd.pagoAviso="Pagó estando en «Descartado»: revísalo";
@@ -3075,7 +3080,7 @@ async function sincronizarPagos(mcp){
   const cfg=S.sync.find(x=>x.id==="pagos")||{};const aceptarPrueba=cfg.aceptarPrueba!==false;
   const cab=filas[0];
   const ps=filas.slice(1).map(f=>filaAObjeto(cab,f)).map(o=>({session:o["Session ID"],fecha:o["Fecha"],plan:o["Plan"],email:String(o["Email"]||"").trim(),nombre:o["Nombre"]||"",empresa:o["Empresa"]||"",nif:o["NIF/CIF"]||"",
-    base:o["Base (€)"]||"",iva:o["IVA (€)"]||"",total:o["Total (€)"]||"",suscripcion:o["Suscripción"]||"",clienteStripe:o["Cliente Stripe"]||"",ref:String(o["Ref lead"]||"").trim(),modo:String(o["Modo"]||"").trim().toLowerCase(),googleAds:/^(s[ií]|true|1|yes)$/i.test(String(o["Google Ads"]||"").trim())}))
+    base:o["Base (€)"]||"",iva:o["IVA (€)"]||"",total:o["Total (€)"]||"",suscripcion:o["Suscripción"]||"",clienteStripe:o["Cliente Stripe"]||"",ref:String(o["Ref lead"]||"").trim(),modo:String(o["Modo"]||"").trim().toLowerCase(),googleAds:/^(s[ií]|true|1|yes)$/i.test(String(o["Google Ads"]||"").trim()),extras:String(o["Extras"]||"").trim()}))
     .filter(x=>x.session&&(x.modo!=="prueba"||aceptarPrueba));
   let cambios=0;const sinLead=[];
   for(const pg of ps){
@@ -3578,8 +3583,11 @@ function vistaSalud(m){
 }
 
 /* ---------- Métricas de negocio ---------- */
-const GOOGLE_ADS_EUR=300; /* cifra de ejemplo, pendiente de cerrar con Stevan (CLAUDE.md, 2026-11-13) */
-function valorMensual(n){if(!n||n.prueba||idxEtapa(n.etapa)<IDX_CLIENTE||n.etapa===DESCARTADO)return 0;return(PLANES[n.plan]||0)+(n.plan==="Scale"&&n.googleAds?GOOGLE_ADS_EUR:0)}
+/* Extras (Manu, 2026-11-26): Google Ads +250 €/mes y panel +49 €/mes solo con Growth y Scale; la web (490 €) y el alta del panel son pagos únicos y no suman al MRR. */
+const GOOGLE_ADS_EUR=250,PANEL_EUR=49,WEB_EUR=490,PANEL_ALTA_EUR=290;
+function extrasMes(n){const l=extrasDe(n);return(l.includes("ads")?GOOGLE_ADS_EUR:0)+(l.includes("panel")?PANEL_EUR:0)}
+function sufijoExtras(n){const l=extrasDe(n).filter(k=>k!=="web").map(k=>k==="ads"?"Ads":"Live");return l.length?" + "+l.join(" + "):""}
+function valorMensual(n){if(!n||n.prueba||idxEtapa(n.etapa)<IDX_CLIENTE||n.etapa===DESCARTADO)return 0;return(PLANES[n.plan]||0)+extrasMes(n)}
 function clientesActivos(){return S.negocios.filter(n=>n.etapa!==DESCARTADO&&idxEtapa(n.etapa)>=IDX_CLIENTE)}
 function mrrEstimado(){return clientesActivos().reduce((s,n)=>s+valorMensual(n),0)}
 function tiempoRespuesta(){
@@ -3761,7 +3769,7 @@ function vistaClientes(m){
   const seg=SEGS.find(s=>s[0]===CL.seg)||SEGS[0];
   const q=CL.q.trim().toLowerCase();
   const filas=N.filter(seg[2]).filter(n=>!q||[n.nombre,n.contacto,n.apellidos,n.email,n.whatsapp,n.sector,n.localidad,n.barrio].join(" ").toLowerCase().includes(q));
-  const cuota=n=>n.prueba?0:(PLANES[n.plan]||0)+(n.plan==="Scale"&&n.googleAds?GOOGLE_ADS_EUR:0);
+  const cuota=n=>n.prueba?0:(PLANES[n.plan]||0)+extrasMes(n);
   const COLS=[
     ["nombre","Negocio",n=>n.nombre||""],["etapa","Etapa",n=>idxEtapa(n.etapa)],["plan","Plan",n=>n.plan||""],["cuota","Cuota/mes",cuota,"r"],
     ["alta","Alta",n=>n.fechaAlta||n.pagadoEl||""],["sus","Suscripción",n=>{const z=subDe(n);return z?z.estado:""}],["cd","Content Day",n=>n.contentDay||""],["resp","Lo lleva",n=>n.responsable||""],["origen","Origen",n=>n.origen||""]];
@@ -3782,7 +3790,7 @@ function vistaClientes(m){
     h("tbody",null,filas.map(n=>h("tr",{tabindex:"0",onclick:abrir(n),onkeydown:e=>{if(e.key==="Enter")abrir(n)()}},
       h("td",null,h("div",{class:"dt-n"},h("span",{class:"bav v"+varAvatar(n.nombre),"aria-hidden":"true",text:iniciales(n.nombre)}),h("div",null,h("b",{text:n.nombre||"Sin nombre"}),h("span",{text:[n.contacto,n.sector].filter(Boolean).join(" · ")})))),
       h("td",{"data-l":"Etapa"},pillEtapa(n)),
-      h("td",{"data-l":"Plan"},n.plan?n.plan+(n.plan==="Scale"&&n.googleAds?" + Ads":""):h("span",{class:"muted",text:"—"}),n.prueba?h("span",{class:"pill info",style:"margin-left:6px",text:"Gratis"}):null),
+      h("td",{"data-l":"Plan"},n.plan?n.plan+sufijoExtras(n):h("span",{class:"muted",text:"—"}),n.prueba?h("span",{class:"pill info",style:"margin-left:6px",text:"Gratis"}):null),
       h("td",{class:"r","data-l":"Cuota/mes"},cuota(n)?eur0(cuota(n)):h("span",{class:"muted",text:"—"})),
       h("td",{"data-l":"Alta"},n.fechaAlta||n.pagadoEl?fechaCorta(n.fechaAlta||n.pagadoEl):h("span",{class:"muted",text:"—"})),
       (()=>{const z=subDe(n);if(!z)return h("td",{"data-l":"Suscripción"},h("span",{class:"muted",text:n.prueba?"Gratis":"—"}));const[et,ec]=estadoSub(z);return h("td",{"data-l":"Suscripción"},h("span",{class:"pill "+ec,text:et}),z.proximoCobro&&subViva(z)?h("span",{class:"muted",style:"margin-left:8px;font-size:12px",text:"cobra "+fechaD(z.proximoCobro)}):null)})(),
@@ -3870,10 +3878,11 @@ function vistaFinanzas(m){
   let filasPlan;
   if(conStripe)filasPlan=Object.keys(PLANES).map(k=>{const xs=vivas.filter(s=>capPlan(s.plan)===k);return{l:k,s:plural(xs.length,"suscripción","suscripciones"),v:xs.reduce((t,s)=>t+toN(s.baseMensual),0)}});
   else{filasPlan=Object.keys(PLANES).map(k=>{const xs=pago.filter(n=>n.plan===k);return{l:k,s:plural(xs.length,"cliente","clientes")+" × "+PLANES[k]+" €",v:xs.length*PLANES[k]}});
-    const ads=pago.filter(n=>n.plan==="Scale"&&n.googleAds).length;if(ads)filasPlan.push({l:"Google Ads",s:plural(ads,"cliente","clientes")+" × "+GOOGLE_ADS_EUR+" €",v:ads*GOOGLE_ADS_EUR})}
+    const ads=pago.filter(n=>extrasDe(n).includes("ads")).length;if(ads)filasPlan.push({l:"Google Ads",s:plural(ads,"cliente","clientes")+" × "+GOOGLE_ADS_EUR+" €",v:ads*GOOGLE_ADS_EUR});
+    const pan=pago.filter(n=>extrasDe(n).includes("panel")).length;if(pan)filasPlan.push({l:"VEO UP Live",s:plural(pan,"cliente","clientes")+" × "+PANEL_EUR+" €",v:pan*PANEL_EUR})}
   const maxP=Math.max(1,...filasPlan.map(x=>x.v));
   const reparto=h("div",{class:"hb"},filasPlan.map(x=>h("div",{class:"hb-r"},h("span",{class:"hb-l"},h("b",{text:x.l}),h("small",{text:x.s})),h("span",{class:"hb-t"},h("i",{style:"width:"+(x.v*100/maxP)+"%"})),h("b",{text:eur0(x.v)}))),
-    h("div",{class:"note",text:conStripe?"Cuota sin IVA de las suscripciones activas en Stripe (Scale incluye Google Ads si lo lleva).":"Cuota de lista sin IVA de los clientes de pago activos. Google Ads +"+GOOGLE_ADS_EUR+" €: cifra pendiente de cerrar con Stevan."}));
+    h("div",{class:"note",text:conStripe?"Cuota sin IVA de las suscripciones activas en Stripe (incluye Google Ads y panel si los llevan).":"Cuota de lista sin IVA de los clientes de pago activos, con Google Ads (+"+GOOGLE_ADS_EUR+" €) y panel (+"+PANEL_EUR+" €) si los llevan. La web y el alta del panel son pagos únicos y no cuentan aquí."}));
   m.append(h("div",{class:"grid2"},
     tarjetaPanel("Cobros por mes",h("span",{class:"note",text:"Total con IVA · últimos 6 meses"}),h("div",{class:"card-b"},graf,
       conStripe?null:h("div",{class:"note",text:"Todavía no hay datos de suscripciones de Stripe: se muestran los pagos de alta."}))),
